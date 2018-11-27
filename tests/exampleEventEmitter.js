@@ -8,24 +8,11 @@ const EventEmitter = require('events');
 async function main() {
     const emitter = new EventEmitter();
 
-    const client1 = new MoleClient({
-        transport: new EventEmitterTransportClient({
-            emitter,
-            inTopic: 'toClient1',
-            outTopic: 'fromClient1'
-        }),
-    });
+    await runServer(emitter);
+    await runClients(emitter);
+}
 
-
-    const client2 = new MoleClient({
-        transport: new EventEmitterTransportClient({
-            emitter,
-            inTopic: 'toClient2',
-            outTopic: 'fromClient2'
-        }),
-    });
-    
-    
+async function runServer(emitter) {
     const server = new MoleServer({
         transports: [
             new EventEmitterTransportServer({
@@ -51,7 +38,25 @@ async function main() {
             });
         } 
     });
-    
+}
+
+async function runClients(emitter) {
+    const client1 = new MoleClient({
+        transport: new EventEmitterTransportClient({
+            emitter,
+            inTopic: 'toClient1',
+            outTopic: 'fromClient1'
+        }),
+    });
+
+    const client2 = new MoleClient({
+        transport: new EventEmitterTransportClient({
+            emitter,
+            inTopic: 'toClient2',
+            outTopic: 'fromClient2'
+        }),
+    });
+
     console.log(
         'CLIENT 1',
         await client1.callMethod('getGreeting', 'User1')
