@@ -1,7 +1,36 @@
-# node-mole-rpc
-Transport agnostic spec compliant JSON RPC client and server
+# mole-rpc
+Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in NodeJs, Browser, Electron etc
 
-## What can you do with Mole RPC:
+## Table of contents
+
+- [Features](#features)
+- [Usage](#installation)
+- [Use cases](#use-cases)
+- [Usage](#usage)
+  - [Client](#client)
+     - [Interface description](#client-interface-description)
+     - [Browser usage](#clientbrowser)
+     - [Notifications](#notifications)
+     - [Batches](#batches)
+     - [Callback syntactic sugar](#client-callback-syntactic-sugar)
+     - [Events](#client-events)
+  - [Server](#server)
+     - [Interface description](#server-interface-description)
+     - [Many interfaces at the same time](#many-interfaces-at-the-same-time)
+     - [Using the server as a relay](#using-the-server-as-a-relay)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+
+
+## Use cases
+
+### Case 1: Easy way to communicate with web-workers in your browser
+
+### Case 2: Bypass firewall
+
+### Case 3: Microservices via message broker
+
+### Case 4: Lightweight Inter process communication
 
 ### You can use different transport for JSON RPC 
 
@@ -10,7 +39,8 @@ So, your code does not depend on a way you communicate. You can use:
 * WebSockets
 * MQTT
 * TCP
-* EventEmitter (communicate within one process in an abstract way) 
+* EventEmitter (communicate within one process in an abstract way)
+* Named pipe (FIFOs) 
 
 ### You can use several transports the same time.
 

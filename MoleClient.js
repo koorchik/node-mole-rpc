@@ -1,9 +1,11 @@
 const uuidv4 = require('uuid/v4');
 
 class MoleClient {
-    constructor({transport}) {
+    constructor({transport, requestTimeout=20000}) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
         this.transport = transport;
+
+        this.requestTimeout = requestTimeout;
 
         this.pendingRequest = {};
         this.initialized = false;
@@ -32,7 +34,8 @@ class MoleClient {
         if (isSuccessfulResponse) {
             resolvers.resolve(response.result)
         } else if (isErrorResponse) {
-            resolvers.reject( new Error(response.error.message) );
+            console.log(response.error);
+            resolvers.reject( response.error );
         } 
     }
 
@@ -47,17 +50,38 @@ class MoleClient {
         };
         
         const data = JSON.stringify(request);
-        
 
         return new Promise((resolve, reject) => {
-            this.pendingRequest[request.id] = {resolve, reject};  
+            this.pendingRequest[request.id] = {resolve, reject};
+
+            setTimeout(() => {
+                if (this.pendingRequest[request.id]) {
+                    delete this.pendingRequest[request.id];
+
+                    reject({
+                        code: 'REQUEST_TIMEOUT', 
+                        message: 'Request exceeded maximum execution time'
+                    });
+                }
+            }, this.requestTimeout);
+
             return this.transport.send(data);
         });
     }
 
     async notify(method, ...params) {
         await this._init();
-        const request = this._prepareJsonRpcPayload(method, params);
+
+        const request = {
+            jsonrpc: "2.0",
+            method,
+            params
+        };
+        
+        const data = JSON.stringify(request);
+  
+        await this.transport.send(data);
+        return true;
     }
 }
 

@@ -32,6 +32,9 @@ class MoleServer {
         let response = {};
         if (method) {
             const result = await method(...params);
+            if (!id) {
+                send('{}'); // TODO For notifications do not respond. send('') could mean send nothing
+            };
             response = { jsonrpc: "2.0", result, id };
         } else {
             response = { 

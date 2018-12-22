@@ -1,3 +1,5 @@
+const {assert} = require('chai');
+
 class AutoTester {
     constructor({client1, client2, server}) {
         if (!client1) throw new Error('"client1" required');
@@ -43,12 +45,20 @@ class AutoTester {
                 return new Promise((resolve, reject) => {
                     setTimeout(() => {
                         resolve({
-                            from: 'syncMethodComplexData',
+                            from: 'asyncMethodComplexData',
                             args
                         });
                     }, 500);
                 });
-            }
+            }, 
+
+            asyncMethodLongRunning: async (arg1, arg2) => {
+                return new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        resolve(`args data "${arg1} ${arg2}" from asyncMethodLongRunning`);
+                    }, 3000);
+                });
+            },
         });
     }
 
@@ -78,7 +88,8 @@ class AutoTester {
 
         for (const {callMethod, args, expectedResult} of testData) {
             const gotResult = await client.callMethod(callMethod, ...args);
-            console.log(expectedResult, gotResult)
+            console.log(gotResult, expectedResult);
+            assert.deepEqual(gotResult, expectedResult);
         }
     }
 
@@ -86,17 +97,26 @@ class AutoTester {
         const testData = [
             {
                 callMethod: 'notExistingMethod',
-                args: ['arg1', 123],
-                expectedResult: 'args data "arg1 123" from syncMethodPrimitiveData'
+                args: [],
+                expectedError: { code: -32601, message: 'Method not found' }
             },
+
+            {
+                callMethod: 'asyncMethodLongRunning',
+                args: [],
+                expectedError: {
+                    code: 'REQUEST_TIMEOUT', 
+                    message: 'Request exceeded maximum execution time'
+                }
+            }
         ];
 
-        for (const {callMethod, args, expectedResult} of testData) {
+        for (const {callMethod, args, expectedError} of testData) {
             try {
                 await client.callMethod(callMethod, ...args);
             } catch (gotError) {
-                const expectedError = 'Method not found';
-                console.log(expectedError, gotError.message); // TODO assert 
+                console.log(gotError, expectedError)
+                assert.deepEqual(gotError, expectedError);
             }
         }
     }
