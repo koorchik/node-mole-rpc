@@ -22,7 +22,78 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 - [Contributing](#contributing)
 
 
-## Use cases
+## Usage example
+
+```javascript
+// Client
+const client = new MoleClient(options);
+
+// With proxy support
+const myApp = client.proxy();
+console.log( await myApp.ping() );
+console.log( await myApp.hello('John Doe') );
+console.log( await myApp.asyncHello('John Doe') );
+
+// Without proxy support
+console.log( await client.callMethod('ping' );
+console.log( await client.callMethod('hello', 'John Doe') );
+console.log( await client.callMethod('asyncHello', 'John Doe') );
+
+
+// Server (expose instance)
+class MyApp {
+   ping() {
+      return 'pong';
+   }
+
+   hello(name) { 
+      return `Hi ${name}`; 
+   }
+
+   asyncHello(name) {
+      return new Promise((resolve, reject) => {
+         resolve( this.hello(name) );
+      });
+   }
+
+   _privateMethod() { // methods which start with underscore will not be exposed
+
+   }
+}
+
+const myApp = new MyApp();
+
+const server = new MoleServer(options);
+server.expose(myApp);
+await server.run();
+
+// Server (expose functions)
+function ping() {
+   return 'pong';
+}
+
+function hello(name) { 
+   return `Hi ${name}`; 
+}
+
+function asyncHello(name) {
+   return new Promise((resolve, reject) {
+      resolve( hello(name) );
+   });
+}
+
+const myApp = new MyApp();
+
+const server = new MoleServer(options);
+server.expose({
+   ping,
+   hello,
+   asyncHello
+});
+
+await server.run();
+
+```
 
 ### Case 1: Easy way to communicate with web-workers in your browser
 
