@@ -1,5 +1,11 @@
 const {assert} = require('chai');
 
+const X = require('./X');
+
+const functionsToExpose = require('./AutoTester/exposeFunctions/functionsToExpose');
+const positiveTestsData = require('./AutoTester/exposeFunctions/positiveTestsData');
+const negativeTestsData = require('./AutoTester/exposeFunctions/negativeTestsData');
+
 class AutoTester {
     constructor({client1, client2, server}) {
         if (!client1) throw new Error('"client1" required');
@@ -7,118 +13,53 @@ class AutoTester {
         if (!server) throw new Error('"server" required');
 
         this.client1 = client1;
+        client1.requestTimeout = 1000; // Dirtyhack
         this.client2 = client2;
+        client2.requestTimeout = 1000; // Dirtyhack
         this.server  = server;
     }
 
     async runAllTests() {
         await this._exposeServerMethods();
-        await this._runPositiveTestsForClient(this.client1);
-        await this._runPositiveTestsForClient(this.client2);
+        console.log('Run positive tests for client 1:');
+        await this._runPositiveTestsForClient(this.client1, positiveTestsData);
 
-        await this._runNegativeTestsForClient(this.client1);
-        await this._runNegativeTestsForClient(this.client2);
+        console.log('Run positive tests for client 2:');
+        await this._runPositiveTestsForClient(this.client2, positiveTestsData);
+
+        console.log('Run negative tests for client 1:');
+        await this._runNegativeTestsForClient(this.client1, negativeTestsData);
+
+        console.log('Run negative tests for client 2:');
+        await this._runNegativeTestsForClient(this.client2, negativeTestsData);
     }
 
     async _exposeServerMethods() {
-        this.server.expose({
-            syncMethodPrimitiveData: (arg1, arg2) => {
-                return `args data "${arg1} ${arg2}" from syncMethodPrimitiveData`
-            },
-
-            syncMethodComplexData: (...args) => {
-                return {
-                    from: 'syncMethodComplexData',
-                    args
-                }
-            },
-
-            asyncMethodPrimitiveData: async (arg1, arg2) => {
-                return new Promise((resolve, reject) => {
-                    setTimeout(() => {
-                        resolve(`args data "${arg1} ${arg2}" from asyncMethodPrimitiveData`);
-                    }, 500);
-                });
-            },
-
-            asyncMethodComplexData: async (...args) => {
-                return new Promise((resolve, reject) => {
-                    setTimeout(() => {
-                        resolve({
-                            from: 'asyncMethodComplexData',
-                            args
-                        });
-                    }, 500);
-                });
-            }, 
-
-            asyncMethodLongRunning: async (arg1, arg2) => {
-                return new Promise((resolve, reject) => {
-                    setTimeout(() => {
-                        resolve(`args data "${arg1} ${arg2}" from asyncMethodLongRunning`);
-                    }, 3000);
-                });
-            },
-        });
+        this.server.expose(functionsToExpose);
     }
 
-    async _runPositiveTestsForClient(client) {
-        const testData = [
-            {
-                callMethod: 'syncMethodPrimitiveData',
-                args: ['arg1', 123],
-                expectedResult: 'args data "arg1 123" from syncMethodPrimitiveData'
-            },
-            {
-                callMethod: 'syncMethodComplexData',
-                args: ['arg1', 123],
-                expectedResult: {from: 'syncMethodComplexData', args: ['arg1', 123] }
-            },
-            {
-                callMethod: 'asyncMethodPrimitiveData',
-                args: ['arg1', 123],
-                expectedResult: 'args data "arg1 123" from asyncMethodPrimitiveData'
-            },
-            {
-                callMethod: 'asyncMethodComplexData',
-                args: ['arg1', 123],
-                expectedResult: {from: 'asyncMethodComplexData', args: ['arg1', 123] }
-            },
-        ];
-
-        for (const {callMethod, args, expectedResult} of testData) {
-            const gotResult = await client.callMethod(callMethod, ...args);
-            console.log(gotResult, expectedResult);
+    async _runPositiveTestsForClient(client, positiveTestsData) { 
+        for (const {callMethod, args, expectedResult} of positiveTestsData) {
+            const gotResult = await client.callMethod(callMethod,...args);
+            console.log(`Positive test: calling ${callMethod}`);
             assert.deepEqual(gotResult, expectedResult);
         }
+        console.log('\n');
     }
 
-    async _runNegativeTestsForClient(client) {
-        const testData = [
-            {
-                callMethod: 'notExistingMethod',
-                args: [],
-                expectedError: { code: -32601, message: 'Method not found' }
-            },
-
-            {
-                callMethod: 'asyncMethodLongRunning',
-                args: [],
-                expectedError: {
-                    code: 'REQUEST_TIMEOUT', 
-                    message: 'Request exceeded maximum execution time'
-                }
-            }
-        ];
-
-        for (const {callMethod, args, expectedError} of testData) {
+    async _runNegativeTestsForClient(client, negativeTestsData) {  
+        for (const {callMethod, args, expectedError, expectedClass} of negativeTestsData) {
             try {
+                console.log(`Negative test: calling ${callMethod}`);
                 await client.callMethod(callMethod, ...args);
+                throw new Error(`Method "${callMethod}" should fail but was executed without any error`);
             } catch (gotError) {
-                console.log(gotError, expectedError)
-                assert.deepEqual(gotError, expectedError);
+                assert.instanceOf(gotError, expectedClass, 'check error class');
+                assert.deepEqual(gotError.message, expectedError.message, 'check error message');
+                assert.deepEqual(gotError.code, expectedError.code, 'check error code');
             }
         }
+        console.log('\n');
     }
 }
 

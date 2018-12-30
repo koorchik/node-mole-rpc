@@ -1,4 +1,4 @@
-const errors = require('./errorsConstants');
+const errorCodes = require('./errorCodes');
 
 class MoleServer {
     constructor({transports}) {
@@ -41,7 +41,7 @@ class MoleServer {
                 jsonrpc: "2.0", 
                 id,
                 error: {
-                    code: errors.METHOD_NOT_FOUND,
+                    code: errorCodes.METHOD_NOT_FOUND,
                     message: 'Method not found'
                 } 
             };

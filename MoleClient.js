@@ -1,4 +1,6 @@
 const uuidv4 = require('uuid/v4');
+const X = require('./X');
+const errorCodes = require('./errorCodes');
 
 class MoleClient {
     constructor({transport, requestTimeout=20000}) {
@@ -34,9 +36,19 @@ class MoleClient {
         if (isSuccessfulResponse) {
             resolvers.resolve(response.result)
         } else if (isErrorResponse) {
-            console.log(response.error);
-            resolvers.reject( response.error );
+            const errorObject = this._makeErrorObject(response.error);
+            resolvers.reject( errorObject );
         } 
+    }
+
+    _makeErrorObject(errorData) {
+        const errorBuilder = {
+            [errorCodes.METHOD_NOT_FOUND]: () => {
+                return new X.MethodNotFound();
+            }
+        }[errorData.code];
+        
+        return errorBuilder();
     }
 
     async callMethod(method, ...params) {
