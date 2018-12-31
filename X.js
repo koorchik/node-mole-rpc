@@ -12,7 +12,6 @@ class Base extends Error {
     }
 }
 
-
 class MethodNotFound extends Base {
     constructor() {
         super({
@@ -22,7 +21,58 @@ class MethodNotFound extends Base {
     }
 }
 
+class InvalidParams extends Base {
+    constructor() {
+        super({
+            code: errorCodes.INVALID_PARAMS,
+            message: 'Invalid params'
+        });
+    }
+}
+
+class InternalError extends Base {
+    constructor() {
+        super({
+            code: errorCodes.INTERNAL_ERROR,
+            message: 'Internal error'
+        });
+    }
+}
+
+class ParseError extends Base {
+    constructor() {
+        super({
+            code: errorCodes.PARSE_ERROR,
+            message: 'Parse error'
+        });
+    }
+}
+
+class InvalidRequest extends Base {
+    constructor() {
+        super({
+            code: errorCodes.INVALID_REQUEST,
+            message: 'Invalid request'
+        });
+    }
+}
+
+
+class ServerError extends Base {
+    constructor({ code }) {
+        super({
+            code,
+            message: 'Server error'
+        });
+    }
+}
+
 module.exports = {
     Base,
-    MethodNotFound
+    MethodNotFound,
+    InvalidRequest,
+    InvalidParams,
+    InternalError,
+    ServerError,
+    ParseError
 };

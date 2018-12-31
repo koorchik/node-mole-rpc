@@ -36,10 +36,16 @@ async function asyncFunctionLongRunning(arg1, arg2) {
     });
 }
 
+function _privateFunction() {
+    return 'Function which starts with "_" will not be exposed';
+}
+
+
 module.exports = {
     syncFunctionPrimitiveData,
     syncFunctionComplexData,
     asyncFunctionPrimitiveData,
     asyncFunctionComplexData,
-    asyncFunctionLongRunning
+    asyncFunctionLongRunning,
+    _privateFunction
 };

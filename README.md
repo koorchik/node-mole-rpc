@@ -34,10 +34,55 @@ console.log( await myApp.ping() );
 console.log( await myApp.hello('John Doe') );
 console.log( await myApp.asyncHello('John Doe') );
 
+await myApp.notify.hello('John Doe');
+await myApp.callMethod.hello('John Doe');
+
+// Run in parallel
+const promises = [
+   myApp.hello('John Doe');
+   myApp.notify.hello('John Doe');
+];
+
+const results = await Promise.all(promises);
+
+// Run in batch mode (everything in one JSON RPC Request) // TODO (not for the first releases!!!)
+const batch = client.newProxyBatch();
+
+const promises = [
+   batch.hello('John Doe');
+   batch.hello('John Doe');
+]; 
+
+batch.runBatch(); // promises will never be resolved if you will not run batch 
+
+const results = await Promise.all(promises);
+
 // Without proxy support
-console.log( await client.callMethod('ping' );
-console.log( await client.callMethod('hello', 'John Doe') );
-console.log( await client.callMethod('asyncHello', 'John Doe') );
+console.log( await client.callMethod('ping');
+console.log( await client.callMethod('hello', ['John Doe']) );
+console.log( await client.callMethod('asyncHello', ['John Doe']) );
+
+await client.notify('asyncHello', ['John Doe']);
+
+// Run in parallel
+const promises = [
+   client.callMethod('hello', ['John Doe']);
+   client.notify('hello', ['John Doe']);
+];
+
+const results = await Promise.all(promises);
+
+// Run in batch mode (everything in one JSON RPC Request) // PROXY MODE IS NOT SO REQUIRED
+const batch = client.newBatch();
+
+const promises = [
+   batch.callMethod('hello', ['John Doe']);
+   batch.notify('hello', ['John Doe']);
+]; 
+
+batch.runBatch(); // promises will never be resolved if you will not run batch 
+
+const results = await Promise.all(promises);
 
 
 // Server (expose instance)
@@ -73,7 +118,7 @@ function ping() {
 }
 
 function hello(name) { 
-   return `Hi ${name}`; 
+   return `Hi ${name}`;
 }
 
 function asyncHello(name) {

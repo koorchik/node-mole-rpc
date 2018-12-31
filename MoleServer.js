@@ -27,16 +27,15 @@ class MoleServer {
 
         const { method: methodName, params = [], id } = request;
         
-        const method = this.methods[methodName];
+        const methodNotFound = !this.methods[methodName]  
+            || methodName === 'constructor' 
+            || methodName.startsWith('_')
+            || this.methods[methodName] === Object.prototype[methodName];
+
 
         let response = {};
-        if (method) {
-            const result = await method(...params);
-            if (!id) {
-                send('{}'); // TODO For notifications do not respond. send('') could mean send nothing
-            };
-            response = { jsonrpc: "2.0", result, id };
-        } else {
+
+        if (methodNotFound) {
             response = { 
                 jsonrpc: "2.0", 
                 id,
@@ -45,6 +44,14 @@ class MoleServer {
                     message: 'Method not found'
                 } 
             };
+        } else {
+            const result = await this.methods[methodName].apply(this.methods, params);
+
+            if (!id) {
+                send('{}'); // TODO For notifications do not respond. send('') could mean send nothing
+            };
+
+            response = { jsonrpc: "2.0", result, id };
         }
 
         const responseData = JSON.stringify(response);

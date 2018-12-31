@@ -18,5 +18,5 @@ module.exports = [
         callMethod: 'asyncFunctionComplexData',
         args: ['arg1', 123],
         expectedResult: {from: 'asyncFunctionComplexData', args: ['arg1', 123] }
-    },
+    }
 ];
