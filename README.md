@@ -4,7 +4,12 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 ## Table of contents
 
 - [Features](#features)
-- [Usage](#installation)
+- [Basic usage](#basic-usage)
+  - [Client (with Proxy support)](#client-with-proxy-support)
+  - [Client (without Proxy support)](#client-without-proxy-support)
+  - [Server (expose instance)](#server-expose-instance)
+  - [Server (expose functions)](#server-expose-functions)
+- [Advanced usage](#advanced-usage)
 - [Use cases](#use-cases)
 - [Usage](#usage)
   - [Client](#client)
@@ -21,8 +26,16 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 - [FAQ](#faq)
 - [Contributing](#contributing)
 
+## Features
+ * Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc)
+ * Works in NodeJs and in browser
+ * You can use it to send request to webworker in your browser
+ * Server can use several transports the same time
+ * Lightweight
+ * Modern API
+ * Supports all features of JSON-RPC 2.0 (batches, notifications etc)
 
-## Basic usage example
+## Basic usage
 
 You a lot of working examples you can find here too
 https://github.com/koorchik/node-mole-rpc-examples
@@ -44,7 +57,7 @@ const greeting2 = await greeter.asyncHello('John Doe');
 await greeter.notify.hello('John Doe');
 ```
 
-### Client
+### Client (without Proxy support)
 
 ```javascript
 
@@ -123,7 +136,7 @@ server.expose({
 await server.run();
 ```
 
-## Advanced usage example
+## Advanced usage
 
 
 ```javascript
