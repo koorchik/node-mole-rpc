@@ -29,7 +29,10 @@
     "http",
     "tcp",
     "mqtt",
-    "api"
+    "api",
+    "mole-rpc",
+    "mole",
+    "molerpc"
   ],
   "author": "koorchik",
   "license": "MIT",

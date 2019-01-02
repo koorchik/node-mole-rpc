@@ -22,29 +22,128 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 - [Contributing](#contributing)
 
 
-## Usage example
+## Basic usage example
+
+You a lot of working examples you can find here too
+https://github.com/koorchik/node-mole-rpc-examples
+
+### Client (with Proxy support)
+
+If you use modern JavaScript you can use proxified client. 
+It allows you to do remote calls very similar to local calls 
 
 ```javascript
-// Client
+const client = new MoleClient(options);
+const greeter = client.proxify();
+
+const pong = await greeter.ping();
+const greeting1 = await greeter.hello('John Doe');
+const greeting2 = await greeter.asyncHello('John Doe');
+
+// Send JSON RPC notification
+await greeter.notify.hello('John Doe');
+```
+
+### Client
+
+```javascript
+
 const client = new MoleClient(options);
 
-// With proxy support
-const myApp = client.proxy();
-console.log( await myApp.ping() );
-console.log( await myApp.hello('John Doe') );
-console.log( await myApp.asyncHello('John Doe') );
+const pong = await client.callMethod('ping');
+const greeting1 = await client.callMethod('hello', ['John Doe']);
+const greeting2 = await client.callMethod('asyncHello', ['John Doe']);
 
-await myApp.notify.hello('John Doe');
-await myApp.callMethod.hello('John Doe');
+// Send JSON RPC notification
+await client.notify('hello', ['John Doe']);
+```
+
+### Server (expose instance)
+
+You can expose instance directly. 
+Methods which start with underscore will not be exposed.
+Built-in methods of Object base class will not be exposed.  
+
+```javascript
+class Greeter {
+   ping() {
+      return 'pong';
+   }
+
+   hello(name) { 
+      return `Hi ${name}`; 
+   }
+
+   asyncHello(name) {
+      return new Promise((resolve, reject) => {
+         resolve( this.hello(name) );
+      });
+   }
+
+   _privateMethod() { 
+      // will not be exposed
+   }
+}
+
+const greeter = new Greeter();
+
+const server = new MoleServer(options);
+server.expose(greeter);
+
+await server.run();
+
+```
+
+### Server (expose functions)
+
+You can expose functions directly
+
+```javascript
+function ping() {
+   return 'pong';
+}
+
+function hello(name) { 
+   return `Hi ${name}`;
+}
+
+function asyncHello(name) {
+   return new Promise((resolve, reject) {
+      resolve( hello(name) );
+   });
+}
+
+const server = new MoleServer(options);
+server.expose({
+   ping,
+   hello,
+   asyncHello
+});
+
+await server.run();
+```
+
+## Advanced usage example
+
+
+```javascript
+
+// Just the same as "greeter.hello('John Doe')"
+// It can be usefull when you have conflicting 
+// method names like "notify" or "callMethod"
+await greeter.callMethod.hello('John Doe'); 
 
 // Run in parallel
 const promises = [
-   myApp.hello('John Doe');
-   myApp.notify.hello('John Doe');
+   greeter.hello('John Doe');
+   greeter.notify.hello('John Doe');
 ];
 
 const results = await Promise.all(promises);
+```
 
+
+```javascript
 // Run in batch mode (everything in one JSON RPC Request) // TODO (not for the first releases!!!)
 const batch = client.newProxyBatch();
 
@@ -85,33 +184,6 @@ batch.runBatch(); // promises will never be resolved if you will not run batch
 const results = await Promise.all(promises);
 
 
-// Server (expose instance)
-class MyApp {
-   ping() {
-      return 'pong';
-   }
-
-   hello(name) { 
-      return `Hi ${name}`; 
-   }
-
-   asyncHello(name) {
-      return new Promise((resolve, reject) => {
-         resolve( this.hello(name) );
-      });
-   }
-
-   _privateMethod() { // methods which start with underscore will not be exposed
-
-   }
-}
-
-const myApp = new MyApp();
-
-const server = new MoleServer(options);
-server.expose(myApp);
-await server.run();
-
 // Server (expose functions)
 function ping() {
    return 'pong';
@@ -139,6 +211,8 @@ server.expose({
 await server.run();
 
 ```
+
+## Use cases
 
 ### Case 1: Easy way to communicate with web-workers in your browser
 

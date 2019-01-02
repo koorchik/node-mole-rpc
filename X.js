@@ -59,10 +59,14 @@ class InvalidRequest extends Base {
 
 
 class ServerError extends Base {
-    constructor({ code }) {
+    
+}
+
+class RequestTimout extends ServerError {
+    constructor() {
         super({
-            code,
-            message: 'Server error'
+            code: -32001,
+            message: 'Request exceeded maximum execution time'
         });
     }
 }
@@ -74,5 +78,6 @@ module.exports = {
     InvalidParams,
     InternalError,
     ServerError,
-    ParseError
+    ParseError,
+    RequestTimout
 };

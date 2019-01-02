@@ -70,10 +70,7 @@ class MoleClient {
                 if (this.pendingRequest[request.id]) {
                     delete this.pendingRequest[request.id];
 
-                    reject({
-                        code: 'REQUEST_TIMEOUT', 
-                        message: 'Request exceeded maximum execution time'
-                    });
+                    reject( new X.RequestTimout() );
                 }
             }, this.requestTimeout);
 
@@ -94,6 +91,34 @@ class MoleClient {
   
         await this.transport.send(data);
         return true;
+    }
+
+    proxify() {
+        const callMethodProxy = this._proxifyOwnMethod('callMethod');
+        const notifyProxy = this._proxifyOwnMethod('notify');
+
+        return new Proxy(this, {
+            get(target, prop) {
+                if (prop === 'notify') {
+                    return notifyProxy;
+                } else if (prop === 'callMethod') {
+                    return callMethodProxy;
+                } else {
+                    return (...params) => target.callMethod.call(target, prop, ...params);
+                }
+            }
+        });
+    }
+
+    _proxifyOwnMethod(ownMethod) {
+        return new Proxy(this[ownMethod].bind(this), {
+            get(target, prop) {
+                return (...params) => target.call(null, prop, ...params);
+            },
+            apply(target, _, args) {
+                return target.call(null, ...args);
+            }
+        });
     }
 }
 

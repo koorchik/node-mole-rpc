@@ -33,9 +33,9 @@ module.exports = [
         callMethod: 'asyncFunctionLongRunning',
         args: [],
         expectedError: {
-            code: 'REQUEST_TIMEOUT', 
+            code: -32001, 
             message: 'Request exceeded maximum execution time'
         },
-        expectedClass: Object // TODO replace with error class
+        expectedClass: X.RequestTimout
     }
 ];
