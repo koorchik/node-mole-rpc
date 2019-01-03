@@ -138,26 +138,50 @@ await server.run();
 
 ## Advanced usage
 
-
 ```javascript
 
+// Conflicting names
 // Just the same as "greeter.hello('John Doe')"
 // It can be usefull when you have conflicting 
 // method names like "notify" or "callMethod"
 await greeter.callMethod.hello('John Doe'); 
 
-// Run in parallel
+// PROXY: Run in parallel
 const promises = [
    greeter.hello('John Doe');
    greeter.notify.hello('John Doe');
 ];
 
 const results = await Promise.all(promises);
-```
+
+// NO PROXY: Run in parallel
+const promises = [
+   client.callMethod('hello', ['John Doe']);
+   client.notify('hello', ['John Doe']);
+];
+
+const results = await Promise.all(promises);
+
+// RUN BATCH
+
+const results = await client.runBatch([
+   ['hello', ['John Doe']],
+   ['hello', ['John Doe'], 'notify'],
+   ['hello', ['John Doe'], 'callMethod'], // "callMethod" is optional
+   [methodName, params, mode]
+]);
 
 
-```javascript
-// Run in batch mode (everything in one JSON RPC Request) // TODO (not for the first releases!!!)
+// Result structure
+[
+   {success: true, result: 123},
+   null, // no response for notification
+   {success: false, error: errorObject}
+];
+
+
+// IDEAS FOR FUTURE RELEASES:
+// PROXY: Run in batch mode (everything in one JSON RPC Request)
 const batch = client.newProxyBatch();
 
 const promises = [
@@ -169,22 +193,7 @@ batch.runBatch(); // promises will never be resolved if you will not run batch
 
 const results = await Promise.all(promises);
 
-// Without proxy support
-console.log( await client.callMethod('ping');
-console.log( await client.callMethod('hello', ['John Doe']) );
-console.log( await client.callMethod('asyncHello', ['John Doe']) );
-
-await client.notify('asyncHello', ['John Doe']);
-
-// Run in parallel
-const promises = [
-   client.callMethod('hello', ['John Doe']);
-   client.notify('hello', ['John Doe']);
-];
-
-const results = await Promise.all(promises);
-
-// Run in batch mode (everything in one JSON RPC Request) // PROXY MODE IS NOT SO REQUIRED
+// NOT PROXY: Run in batch mode (everything in one JSON RPC Request)
 const batch = client.newBatch();
 
 const promises = [
@@ -195,34 +204,6 @@ const promises = [
 batch.runBatch(); // promises will never be resolved if you will not run batch 
 
 const results = await Promise.all(promises);
-
-
-// Server (expose functions)
-function ping() {
-   return 'pong';
-}
-
-function hello(name) { 
-   return `Hi ${name}`;
-}
-
-function asyncHello(name) {
-   return new Promise((resolve, reject) {
-      resolve( hello(name) );
-   });
-}
-
-const myApp = new MyApp();
-
-const server = new MoleServer(options);
-server.expose({
-   ping,
-   hello,
-   asyncHello
-});
-
-await server.run();
-
 ```
 
 ## Use cases

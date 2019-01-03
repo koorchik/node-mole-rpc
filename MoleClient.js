@@ -51,7 +51,7 @@ class MoleClient {
         return errorBuilder();
     }
 
-    async callMethod(method, ...params) {
+    async callMethod(method, params) {
         await this._init();
 
         const request = {
@@ -78,7 +78,7 @@ class MoleClient {
         });
     }
 
-    async notify(method, ...params) {
+    async notify(method, params) {
         await this._init();
 
         const request = {
@@ -93,18 +93,24 @@ class MoleClient {
         return true;
     }
 
+    async runBatch(calls) {
+        for (const callData of calls) {
+
+        }
+    }
+
     proxify() {
         const callMethodProxy = this._proxifyOwnMethod('callMethod');
         const notifyProxy = this._proxifyOwnMethod('notify');
 
         return new Proxy(this, {
-            get(target, prop) {
-                if (prop === 'notify') {
+            get(target, methodName) {
+                if (methodName === 'notify') {
                     return notifyProxy;
-                } else if (prop === 'callMethod') {
+                } else if (methodName === 'callMethod') {
                     return callMethodProxy;
                 } else {
-                    return (...params) => target.callMethod.call(target, prop, ...params);
+                    return (...params) => target.callMethod.call(target, methodName, params);
                 }
             }
         });
@@ -112,11 +118,11 @@ class MoleClient {
 
     _proxifyOwnMethod(ownMethod) {
         return new Proxy(this[ownMethod].bind(this), {
-            get(target, prop) {
-                return (...params) => target.call(null, prop, ...params);
+            get(target, methodName) {
+                return (...params) => target.call(null, methodName, params);
             },
             apply(target, _, args) {
-                return target.call(null, ...args);
+                return target.apply(null, args);
             }
         });
     }

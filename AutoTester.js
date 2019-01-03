@@ -75,7 +75,7 @@ class AutoTester {
     async _runPositiveTestsForClient(client, positiveTestsData) { 
         for (const {callMethod, args, expectedResult} of positiveTestsData) {
             console.log(`Positive test: calling ${callMethod}`);
-            const gotResult = await client.callMethod(callMethod, ...args);
+            const gotResult = await client.callMethod(callMethod, args);
             assert.deepEqual(gotResult, expectedResult);
         }
         console.log('\n');
@@ -85,7 +85,7 @@ class AutoTester {
     async _runProxifiedPositiveTestsForClient(client, positiveTestsData) { 
         for (const {callMethod, args, expectedResult} of positiveTestsData) {
             console.log(`Positive test via proxy: calling ${callMethod}`);
-            const gotResult = await client[callMethod](...args);
+            const gotResult = await client.callMethod[callMethod](...args);
             assert.deepEqual(gotResult, expectedResult);
         }
         console.log('\n');
@@ -95,7 +95,7 @@ class AutoTester {
         for (const {callMethod, args, expectedError, expectedClass} of negativeTestsData) {
             try {
                 console.log(`Negative test: calling ${callMethod}`);
-                await client.callMethod(callMethod, ...args);
+                await client.callMethod(callMethod, args);
                 throw new Error(`Method "${callMethod}" should fail but was executed without any error`);
             } catch (gotError) {
                 assert.instanceOf(gotError, expectedClass, 'check error class');
