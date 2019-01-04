@@ -21,7 +21,21 @@ class MoleServer {
     }
 
     async _processRequest(data, send) {
-        const request = JSON.parse(data);
+        const requestData = JSON.parse(data);
+        let responseData;
+
+        if ( Array.isArray(requestData) ) {
+            responseData = await Promise.all(
+                requestData.map(request => this._callMethod(requestData) )
+            );
+        } else {
+            responseData = await this._callMethod(requestData);
+        }
+
+        return send(JSON.stringify(responseData));
+    }
+
+    async _callMethod(request) {
         const isRequest = request.hasOwnProperty('method');
         if ( ! isRequest ) return;
 
@@ -54,9 +68,7 @@ class MoleServer {
             response = { jsonrpc: "2.0", result, id };
         }
 
-        const responseData = JSON.stringify(response);
-        
-        return send(responseData);
+        return response;
     }
 }
 

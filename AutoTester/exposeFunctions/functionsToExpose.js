@@ -2,6 +2,10 @@ function syncFunctionPrimitiveData(arg1, arg2) {
     return `args data "${arg1} ${arg2}" from syncFunctionPrimitiveData`
 }
 
+function syncFunctionPrimitiveDataNoArgs() {
+    return 'return from syncFunctionPrimitiveDataNoArgs';
+}
+
 function syncFunctionComplexData(...args) {
     return {
         from: 'syncFunctionComplexData',
@@ -42,6 +46,7 @@ function _privateFunction() {
 
 
 module.exports = {
+    syncFunctionPrimitiveDataNoArgs,
     syncFunctionPrimitiveData,
     syncFunctionComplexData,
     asyncFunctionPrimitiveData,

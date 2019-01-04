@@ -47,7 +47,7 @@ It allows you to do remote calls very similar to local calls
 
 ```javascript
 const client = new MoleClient(options);
-const greeter = client.proxify();
+const greeter = client.proxify(); // TODO "const greeter = proxify(client)" ???
 
 const pong = await greeter.ping();
 const greeting1 = await greeter.hello('John Doe');

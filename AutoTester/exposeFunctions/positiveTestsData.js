@@ -1,5 +1,10 @@
 module.exports = [
     {
+        callMethod: 'syncFunctionPrimitiveDataNoArgs',
+        args: [],
+        expectedResult: 'return from syncFunctionPrimitiveDataNoArgs'
+    },
+    {
         callMethod: 'syncFunctionPrimitiveData',
         args: ['arg1', 123],
         expectedResult: 'args data "arg1 123" from syncFunctionPrimitiveData'
