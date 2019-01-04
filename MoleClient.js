@@ -1,4 +1,4 @@
-const uuidv4 = require('uuid/v4');
+const nanoid = require('nanoid/non-secure');
 const X = require('./X');
 const errorCodes = require('./errorCodes');
 
@@ -58,7 +58,7 @@ class MoleClient {
             jsonrpc: "2.0",
             method,
             params,
-            id: uuidv4(),
+            id: nanoid(10),
         };
         
         const data = JSON.stringify(request);
@@ -94,7 +94,7 @@ class MoleClient {
     }
 
     async runBatch(calls) {
-        for (const callData of calls) {
+        for (const [method, params, mode='callMethod'] of calls) {
 
         }
     }
