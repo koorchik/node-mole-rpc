@@ -24,8 +24,8 @@ class AutoTester {
         console.log('Run simple positive tests for simpleClient:');
         await this._runSimplePositiveTests(this.simpleClient, positiveTestsData);
 
-        // console.log('Run positive batch tests for simpleClient:');
-        // await this._runBatchTests(this.simpleClient, positiveTestsData);
+        console.log('Run positive batch tests for simpleClient:');
+        await this._runBatchTests(this.simpleClient, positiveTestsData);
 
         console.log('Run simple positive tests for proxifiedClient:');
         await this._runSimplePositiveTests(this.proxifiedClient, positiveTestsData);
@@ -63,7 +63,10 @@ class AutoTester {
 
         for (const {callMethod, args, expectedResult} of positiveTestsData) {
             requestData.push([callMethod, args]);
-            expectedResults.push(expectedResult);
+            expectedResults.push({
+                success: true,
+                result: expectedResult
+            });
         }
 
         console.log(`Positive test: calling batch`);

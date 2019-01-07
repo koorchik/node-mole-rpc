@@ -17,18 +17,14 @@ class MoleClient {
         await this._init();
 
         const request = this._makeRequestObject({method, params}); 
-        const data = JSON.stringify(request);
-
-        return this._makeRequest({data, id: request.id});
+        return this._sendRequest({object: request, id: request.id});
     }
 
     async notify(method, params) {
         await this._init();
 
-        const request = this._makeRequestObject({method, params, mode: 'notify'}); 
-        const data = JSON.stringify(request);
-  
-        await this.transport.send(data);
+        const request = this._makeRequestObject({method, params, mode: 'notify'});
+        await this.transport.send( JSON.stringify(request) );
         return true;
     }
 
@@ -36,7 +32,7 @@ class MoleClient {
         const batchId = nanoid(10);
         let onlyNotifications = true;
 
-        const requests = [];
+        const batchRequest = [];
 
         for (const [method, params, mode] of calls) {
             const request = this._makeRequestObject({method, params, mode, batchId});
@@ -45,15 +41,15 @@ class MoleClient {
                 onlyNotifications = false;
             }
 
-            requests.push(request);
+            batchRequest.push(request);
         }
 
-        const data = JSON.stringify(requests);
-
         if (onlyNotifications) {
-            return this.transport.send(data);
+            return this.transport.send(
+                JSON.stringify(batchRequest)
+            );
         } else {
-            return this._makeRequest({ data, id: batchId });
+            return this._sendRequest({ object: batchRequest, id: batchId });
         }
     }
 
@@ -65,9 +61,11 @@ class MoleClient {
         this.initialized = true;
     }
 
-    _makeRequest({data, id}) {
+    _sendRequest({object, id}) {
+        const data = JSON.stringify(object);
+
         return new Promise((resolve, reject) => {
-            this.pendingRequest[id] = {resolve, reject};
+            this.pendingRequest[id] = {resolve, reject, sentObject: object};
 
             setTimeout(() => {
                 if (this.pendingRequest[id]) {
@@ -83,14 +81,22 @@ class MoleClient {
 
     _processResponse(data) {
         const response = JSON.parse(data);
-        // TODO add batch support
+
+        if ( Array.isArray(response) ) {
+            this._processBatchResponse(response);
+        } else {
+            this._processSingleCallResponse(response);
+        }
+    }
+
+    _processSingleCallResponse(response) {
         const isSuccessfulResponse = response.hasOwnProperty('result') || false;
         const isErrorResponse = response.hasOwnProperty('error');
         
         if ( !isSuccessfulResponse && !isErrorResponse ) return;
 
         const resolvers = this.pendingRequest[response.id];
-        delete this.pendingRequest[response.id]; // TODO implement timeouts
+        delete this.pendingRequest[response.id];
 
         if (!resolvers) return;
         
@@ -100,6 +106,65 @@ class MoleClient {
             const errorObject = this._makeErrorObject(response.error);
             resolvers.reject( errorObject );
         } 
+    }
+
+    _processBatchResponse(responses) {
+        let batchId;
+        const responseById = {};
+        const errorsWithoutId = [];
+
+        for (const response of responses) {
+            if (response.id) {
+                if (!batchId) {
+                    batchId = response.id.split('|')[0];
+                }
+
+                responseById[response.id] = response;
+            } else if (response.error) {
+                errorsWithoutId.push(response.error); 
+            }
+        }
+
+        if ( !this.pendingRequest[batchId] ) return;
+
+        const { sentObject, resolve } = this.pendingRequest[batchId];
+        delete this.pendingRequest[batchId];
+
+        const batchResults = [];
+        let errorIdx = 0;
+        for (const request of sentObject) {
+            if (!request.id) {
+                // Skip notifications
+                batchResults.push(null);
+                continue;
+            }
+
+            const response = responseById[request.id];
+
+            if (response) {
+                const isSuccessfulResponse = response.hasOwnProperty('result') || false;
+                
+                if (isSuccessfulResponse) {
+                    batchResults.push({
+                        success: true,
+                        result: response.result 
+                    });
+                } else {
+                    batchResults.push({
+                        success: false,
+                        result: this._makeErrorObject(response.error) 
+                    });
+                }                  
+            } else {
+                batchResults.push({
+                    success: false,
+                    error: this._makeErrorObject( errorsWithoutId[errorIdx] )
+                });
+                errorIdx++;
+            }
+        }
+
+        resolve(batchResults);
     }
 
     _makeRequestObject({method, params, mode, batchId}) {
