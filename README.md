@@ -160,6 +160,8 @@ const results = await client.runBatch([
    {success: false, error: errorObject}
 ];
 
+```
+
 ## Use cases
 
 ### Case 1: Easy way to communicate with web-workers in your browser
