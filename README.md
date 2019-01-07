@@ -1,6 +1,8 @@
 # mole-rpc
 Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in NodeJs, Browser, Electron etc
 
+IMPORTANT: Library is in active development till version 1.0. API changes are possible.
+
 ## Table of contents
 
 - [Features](#features)
