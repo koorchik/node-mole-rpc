@@ -11,20 +11,7 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
   - [Server (expose functions)](#server-expose-functions)
 - [Advanced usage](#advanced-usage)
 - [Use cases](#use-cases)
-- [Usage](#usage)
-  - [Client](#client)
-     - [Interface description](#client-interface-description)
-     - [Browser usage](#clientbrowser)
-     - [Notifications](#notifications)
-     - [Batches](#batches)
-     - [Callback syntactic sugar](#client-callback-syntactic-sugar)
-     - [Events](#client-events)
-  - [Server](#server)
-     - [Interface description](#server-interface-description)
-     - [Many interfaces at the same time](#many-interfaces-at-the-same-time)
-     - [Using the server as a relay](#using-the-server-as-a-relay)
-- [FAQ](#faq)
-- [Contributing](#contributing)
+
 
 ## Features
  * Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc)
@@ -51,8 +38,9 @@ const calculator = new MoleClientProxified(options);
 const result1 = await calculator.sum(1, 3);
 const result2 = await calculator.asyncSum(2, 3);
 
-// Send JSON RPC notification
-await calculator.notify.hello('John Doe');
+// Send JSON RPC notification (fire and forget)
+// server will send no response
+await calculator.notify.sum(3, 2); 
 ```
 
 ### Client (without Proxy support)
@@ -64,8 +52,9 @@ const client = new MoleClient(options);
 const result1 = await client.callMethod('sum', [1, 3]);
 const result2 = await client.callMethod('sum', [2, 3]);
 
-// Send JSON RPC notification
-await client.notify('hello', ['John Doe']);
+// Send JSON RPC notification (fire and forget)
+// server will send no response
+await client.notify('sum', [2, 3]);
 ```
 
 ### Server (expose instance)
@@ -93,7 +82,6 @@ class Calculator {
 
 const calculator = new Calculator();
 
-// expose instance
 const server = new MoleServer(options);
 server.expose(calculator);
 
@@ -130,21 +118,22 @@ await server.run();
 
 ```javascript
 
-// Conflicting names
-// Just the same as "calculator.sum(1, 2)"
-// It can be usefull when you have conflicting 
-// method names like "notify" or "callMethod"
-await calculator.callMethod.sum(1, 2); 
 
-// PROXY: Run in parallel
+// Proxified client: explicit call 
+await calculator.callMethod.sum(1, 2); // the same as "calculator.sum(1, 2)"
+// Can be usefull if your server method is a reserverd name.
+// For example to make a call to remote "notify" method.
+await proxifiedClient.callMethod.notify("Hello");
+
+// Proxified client: run request in parallel
 const promises = [
    calculator.sum(1, 2);
-   calculator.notify.hello('John Doe');
+   calculator.notify.sum(1, 2);
 ];
 
 const results = await Promise.all(promises);
 
-// NO PROXY: Run in parallel
+// Simple client: run in parallel
 const promises = [
    client.callMethod('sum', [1, 2]);
    client.notify('sum', [1, 2]);
@@ -152,7 +141,7 @@ const promises = [
 
 const results = await Promise.all(promises);
 
-// RUN BATCH
+// Simple client: run batch
 const results = await client.runBatch([
    ['sum', [1, 3]],
    ['sum', [2, 5], 'notify'],
@@ -167,33 +156,6 @@ const results = await client.runBatch([
    null, // no response for notification
    {success: false, error: errorObject}
 ];
-
-
-// IDEAS FOR FUTURE RELEASES:
-// PROXY: Run in batch mode (everything in one JSON RPC Request)
-const batch = client.newProxyBatch();
-
-const promises = [
-   batch.hello('John Doe');
-   batch.hello('John Doe');
-]; 
-
-batch.runBatch(); // promises will never be resolved if you will not run batch 
-
-const results = await Promise.all(promises);
-
-// NOT PROXY: Run in batch mode (everything in one JSON RPC Request)
-const batch = client.newBatch();
-
-const promises = [
-   batch.callMethod('hello', ['John Doe']);
-   batch.notify('hello', ['John Doe']);
-]; 
-
-batch.runBatch(); // promises will never be resolved if you will not run batch 
-
-const results = await Promise.all(promises);
-```
 
 ## Use cases
 
