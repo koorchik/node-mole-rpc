@@ -71,6 +71,10 @@ class MoleServer {
 
         return response;
     }
+
+    async run() {
+        return true;
+    }
 }
 
 module.exports = MoleServer;
