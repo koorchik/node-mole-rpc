@@ -48,8 +48,8 @@ It allows you to do remote calls very similar to local calls
 ```javascript
 const calculator = new MoleClientProxified(options);
 
-const sum1 = await calculator.sum(1, 3);
-const sum2 = await calculator.asyncSum(2, 3);
+const result1 = await calculator.sum(1, 3);
+const result2 = await calculator.asyncSum(2, 3);
 
 // Send JSON RPC notification
 await calculator.notify.hello('John Doe');
@@ -61,8 +61,8 @@ await calculator.notify.hello('John Doe');
 
 const client = new MoleClient(options);
 
-const sum1 = await client.callMethod('sum', [1, 3]);
-const sum2 = await client.callMethod('sum', [2, 3]);
+const result1 = await client.callMethod('sum', [1, 3]);
+const result2 = await client.callMethod('sum', [2, 3]);
 
 // Send JSON RPC notification
 await client.notify('hello', ['John Doe']);
