@@ -17,7 +17,7 @@ async function asyncFunctionPrimitiveData(arg1, arg2) {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
             resolve(`args data "${arg1} ${arg2}" from asyncFunctionPrimitiveData`);
-        }, 500);
+        }, 200);
     });
 }
 
@@ -28,7 +28,7 @@ async function asyncFunctionComplexData(...args) {
                 from: 'asyncFunctionComplexData',
                 args
             });
-        }, 500);
+        }, 100);
     });
 }
 

@@ -1,7 +1,6 @@
 const nanoid = require('nanoid/non-secure');
 const X = require('./X');
 const errorCodes = require('./errorCodes');
-const proxify = require('./proxify');
 
 class MoleClient {
     constructor({transport, requestTimeout=20000}) {
@@ -35,16 +34,18 @@ class MoleClient {
 
     async runBatch(calls) {
         const batchId = nanoid(10);
-        const onlyNotifications = true;
+        let onlyNotifications = true;
 
         const requests = [];
 
-        for (const call of calls) {
-            const request = this._makeRequestObject({...call, batchId});
-            
+        for (const [method, params, mode] of calls) {
+            const request = this._makeRequestObject({method, params, mode, batchId});
+
             if (request.id) {
                 onlyNotifications = false;
             }
+
+            requests.push(request);
         }
 
         const data = JSON.stringify(requests);
@@ -54,11 +55,6 @@ class MoleClient {
         } else {
             return this._makeRequest({ data, id: batchId });
         }
-        
-    }
-
-    proxify() {
-        return proxify(this);
     }
 
     async _init() {
@@ -67,33 +63,6 @@ class MoleClient {
         await this.transport.onMessage(this._processResponse.bind(this));
 
         this.initialized = true;
-    }
-
-    _makeRequestObject({method, params, mode, batchId}) {
-        const request = {
-            jsonrpc: "2.0",
-            method
-        };
-
-        if (params && params.length) {
-            request.params = params
-        }
-
-        if (mode !== 'notify') {
-            request.id = batchId ? `${batchId}|${nanoid(10)}` : nanoid(10);
-        }
-
-        return request;
-    }
-
-    _makeErrorObject(errorData) {
-        const errorBuilder = {
-            [errorCodes.METHOD_NOT_FOUND]: () => {
-                return new X.MethodNotFound();
-            }
-        }[errorData.code];
-        
-        return errorBuilder();
     }
 
     _makeRequest({data, id}) {
@@ -131,6 +100,33 @@ class MoleClient {
             const errorObject = this._makeErrorObject(response.error);
             resolvers.reject( errorObject );
         } 
+    }
+
+    _makeRequestObject({method, params, mode, batchId}) {
+        const request = {
+            jsonrpc: "2.0",
+            method
+        };
+
+        if (params && params.length) {
+            request.params = params
+        }
+
+        if (mode !== 'notify') {
+            request.id = batchId ? `${batchId}|${nanoid(10)}` : nanoid(10);
+        }
+
+        return request;
+    }
+
+    _makeErrorObject(errorData) {
+        const errorBuilder = {
+            [errorCodes.METHOD_NOT_FOUND]: () => {
+                return new X.MethodNotFound();
+            }
+        }[errorData.code];
+        
+        return errorBuilder();
     }
 }
 

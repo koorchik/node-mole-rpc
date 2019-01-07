@@ -25,8 +25,9 @@ class MoleServer {
         let responseData;
 
         if ( Array.isArray(requestData) ) {
+            // TODO Batch error handling?
             responseData = await Promise.all(
-                requestData.map(request => this._callMethod(requestData) )
+                requestData.map(request => this._callMethod(request) )
             );
         } else {
             responseData = await this._callMethod(requestData);
