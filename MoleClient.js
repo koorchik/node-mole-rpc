@@ -1,4 +1,3 @@
-const nanoid = require('nanoid/non-secure');
 const X = require('./X');
 const errorCodes = require('./errorCodes');
 
