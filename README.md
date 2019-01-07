@@ -15,6 +15,7 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 ## Features
  * Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc)
+ * Totally abstract implementation with zero dependencies
  * Works in NodeJs and in browser
  * You can use it to send request to webworker in your browser
  * Server can use several transports the same time

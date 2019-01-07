@@ -29,7 +29,7 @@ class MoleClient {
     }
 
     async runBatch(calls) {
-        const batchId = nanoid(10);
+        const batchId = this._generateId();
         let onlyNotifications = true;
 
         const batchRequest = [];
@@ -178,7 +178,7 @@ class MoleClient {
         }
 
         if (mode !== 'notify') {
-            request.id = batchId ? `${batchId}|${nanoid(10)}` : nanoid(10);
+            request.id = batchId ? `${batchId}|${this._generateId()}` : this._generateId();
         }
 
         return request;
@@ -192,6 +192,19 @@ class MoleClient {
         }[errorData.code];
         
         return errorBuilder();
+    }
+
+    _generateId() {
+        // from "nanoid" package
+        const alphabet = 'bjectSymhasOwnProp-0123456789ABCDEFGHIJKLMNQRTUVWXYZ_dfgiklquvxz';
+        let size = 10;
+        let id = '';
+
+        while (0 < size--) {
+            id += alphabet[Math.random() * 64 | 0]
+        }
+
+        return id;
     }
 }
 
