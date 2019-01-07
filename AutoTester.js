@@ -7,72 +7,45 @@ const positiveTestsData = require('./AutoTester/exposeFunctions/positiveTestsDat
 const negativeTestsData = require('./AutoTester/exposeFunctions/negativeTestsData');
 
 class AutoTester {
-    constructor({client1, client2, server}) {
-        if (!client1) throw new Error('"client1" required');
-        if (!client2) throw new Error('"client2" required');
+    constructor({simpleClient, proxifiedClient, server}) {
+        if (!simpleClient) throw new Error('"simpleClient" required');
+        if (!proxifiedClient) throw new Error('"proxifiedClient" required');
         if (!server) throw new Error('"server" required');
 
-        this.client1 = client1;
-        client1.requestTimeout = 1000; // Dirtyhack
-        this.client2 = client2;
-        client2.requestTimeout = 1000; // Dirtyhack
+        this.simpleClient = simpleClient;
+        this.proxifiedClient = proxifiedClient;
         this.server  = server;
     }
 
     async runAllTests() {
         await this._exposeServerMethods();
         
-        console.log('Run positive tests for client 1:');
-        await this._runPositiveTestsForClient(this.client1, positiveTestsData);
+        // POSITIVE TESTS
+        console.log('Run simple positive tests for simpleClient:');
+        await this._runSimplePositiveTestsForClient(this.simpleClient, positiveTestsData);
 
-        console.log('Run positive tests for proxified client 1:');
-        await this._runPositiveTestsForClient(this.client1.proxify(), positiveTestsData);
-        
-        console.log('Run proxy positive tests for proxified client 1:');
-        await this._runProxifiedPositiveTestsForClient(this.client1.proxify(), positiveTestsData);
+        console.log('Run simple positive tests for proxifiedClient:');
+        await this._runSimplePositiveTestsForClient(this.proxifiedClient, positiveTestsData);
 
+        console.log('Run proxy positive tests for proxifiedClient:');
+        await this._runProxyPositiveTestsForClient(this.proxifiedClient, positiveTestsData);
 
+        // NEGATIVE TESTS
+        console.log('Run simple negative tests for simpleClient:');
+        await this._runSimpleNegativeTestsForClient(this.simpleClient, negativeTestsData);
 
-        console.log('Run positive tests for client 2:');
-        await this._runPositiveTestsForClient(this.client2, positiveTestsData);
+        console.log('Run simple negative tests for proxifiedClient:');
+        await this._runSimpleNegativeTestsForClient(this.proxifiedClient, negativeTestsData);
 
-        console.log('Run positive tests for proxified client 2:');
-        await this._runPositiveTestsForClient(this.client2.proxify(), positiveTestsData);
-        
-        console.log('Run proxy positive tests for proxified client 2:');
-        await this._runProxifiedPositiveTestsForClient(this.client2.proxify(), positiveTestsData);
-
-
-
-        
-        console.log('Run negative tests for client 1:');
-        await this._runNegativeTestsForClient(this.client1, negativeTestsData);
-
-        console.log('Run negative tests for proxified client 1:');
-        await this._runNegativeTestsForClient(this.client1.proxify(), negativeTestsData);
-
-        console.log('Run proxy negative tests for proxified client 1:');
-        await this._runProxifiedNegativeTestsForClient(this.client1.proxify(), negativeTestsData);
-
-
-
-        console.log('Run negative tests for client 2:');
-        await this._runNegativeTestsForClient(this.client2, negativeTestsData);
-
-        console.log('Run negative tests for proxified client 2:');
-        await this._runNegativeTestsForClient(this.client2.proxify(), negativeTestsData);
-
-        console.log('Run proxy negative tests for proxified client 2:');
-        await this._runProxifiedNegativeTestsForClient(this.client2.proxify(), negativeTestsData);
-
-        // TODO Move proxify (or standard) tests out of AutoTester 
+        console.log('Run proxy negative tests for proxifiedClient:');
+        await this._runProxyNegativeTestsForClient(this.proxifiedClient, negativeTestsData);
     }
 
     async _exposeServerMethods() {
         this.server.expose(functionsToExpose);
     }
 
-    async _runPositiveTestsForClient(client, positiveTestsData) { 
+    async _runSimplePositiveTestsForClient(client, positiveTestsData) { 
         for (const {callMethod, args, expectedResult} of positiveTestsData) {
             console.log(`Positive test: calling ${callMethod}`);
             const gotResult = await client.callMethod(callMethod, args);
@@ -82,7 +55,7 @@ class AutoTester {
     }
 
 
-    async _runProxifiedPositiveTestsForClient(client, positiveTestsData) { 
+    async _runProxyPositiveTestsForClient(client, positiveTestsData) { 
         for (const {callMethod, args, expectedResult} of positiveTestsData) {
             console.log(`Positive test via proxy: calling ${callMethod}`);
             const gotResult = await client.callMethod[callMethod](...args);
@@ -91,7 +64,7 @@ class AutoTester {
         console.log('\n');
     }
 
-    async _runNegativeTestsForClient(client, negativeTestsData) {  
+    async _runSimpleNegativeTestsForClient(client, negativeTestsData) {  
         for (const {callMethod, args, expectedError, expectedClass} of negativeTestsData) {
             try {
                 console.log(`Negative test: calling ${callMethod}`);
@@ -106,7 +79,7 @@ class AutoTester {
         console.log('\n');
     }
 
-    async _runProxifiedNegativeTestsForClient(client, negativeTestsData) {  
+    async _runProxyNegativeTestsForClient(client, negativeTestsData) {  
         for (const {callMethod, args, expectedError, expectedClass} of negativeTestsData) {
             try {
                 console.log(`Negative test via proxy: calling ${callMethod}`);

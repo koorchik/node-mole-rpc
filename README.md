@@ -46,15 +46,13 @@ If you use modern JavaScript you can use proxified client.
 It allows you to do remote calls very similar to local calls 
 
 ```javascript
-const client = new MoleClient(options);
-const greeter = client.proxify(); // TODO "const greeter = proxify(client)" ???
+const calculator = new MoleClientProxified(options);
 
-const pong = await greeter.ping();
-const greeting1 = await greeter.hello('John Doe');
-const greeting2 = await greeter.asyncHello('John Doe');
+const sum1 = await calculator.sum(1, 3);
+const sum2 = await calculator.asyncSum(2, 3);
 
 // Send JSON RPC notification
-await greeter.notify.hello('John Doe');
+await calculator.notify.hello('John Doe');
 ```
 
 ### Client (without Proxy support)
@@ -63,9 +61,8 @@ await greeter.notify.hello('John Doe');
 
 const client = new MoleClient(options);
 
-const pong = await client.callMethod('ping');
-const greeting1 = await client.callMethod('hello', ['John Doe']);
-const greeting2 = await client.callMethod('asyncHello', ['John Doe']);
+const sum1 = await client.callMethod('sum', [1, 3]);
+const sum2 = await client.callMethod('sum', [2, 3]);
 
 // Send JSON RPC notification
 await client.notify('hello', ['John Doe']);
@@ -78,18 +75,14 @@ Methods which start with underscore will not be exposed.
 Built-in methods of Object base class will not be exposed.  
 
 ```javascript
-class Greeter {
-   ping() {
-      return 'pong';
+class Calculator {
+   sum(a, b) { 
+      return a+b; 
    }
 
-   hello(name) { 
-      return `Hi ${name}`; 
-   }
-
-   asyncHello(name) {
+   asyncHello(a, b) {
       return new Promise((resolve, reject) => {
-         resolve( this.hello(name) );
+         resolve( this.sum(a, b) );
       });
    }
 
@@ -98,10 +91,11 @@ class Greeter {
    }
 }
 
-const greeter = new Greeter();
+const calculator = new Calculator();
 
+// expose instance
 const server = new MoleServer(options);
-server.expose(greeter);
+server.expose(calculator);
 
 await server.run();
 
@@ -112,25 +106,21 @@ await server.run();
 You can expose functions directly
 
 ```javascript
-function ping() {
-   return 'pong';
+
+function sum(a, b) { 
+   return a+b;
 }
 
-function hello(name) { 
-   return `Hi ${name}`;
-}
-
-function asyncHello(name) {
+function asyncSum(a, b) {
    return new Promise((resolve, reject) {
-      resolve( hello(name) );
+      resolve( sum(a, b) );
    });
 }
 
 const server = new MoleServer(options);
 server.expose({
-   ping,
-   hello,
-   asyncHello
+   sum,
+   asyncSum
 });
 
 await server.run();
@@ -141,33 +131,32 @@ await server.run();
 ```javascript
 
 // Conflicting names
-// Just the same as "greeter.hello('John Doe')"
+// Just the same as "calculator.sum(1, 2)"
 // It can be usefull when you have conflicting 
 // method names like "notify" or "callMethod"
-await greeter.callMethod.hello('John Doe'); 
+await calculator.callMethod.sum(1, 2); 
 
 // PROXY: Run in parallel
 const promises = [
-   greeter.hello('John Doe');
-   greeter.notify.hello('John Doe');
+   calculator.sum(1, 2);
+   calculator.notify.hello('John Doe');
 ];
 
 const results = await Promise.all(promises);
 
 // NO PROXY: Run in parallel
 const promises = [
-   client.callMethod('hello', ['John Doe']);
-   client.notify('hello', ['John Doe']);
+   client.callMethod('sum', [1, 2]);
+   client.notify('sum', [1, 2]);
 ];
 
 const results = await Promise.all(promises);
 
 // RUN BATCH
-
 const results = await client.runBatch([
-   ['hello', ['John Doe']],
-   ['hello', ['John Doe'], 'notify'],
-   ['hello', ['John Doe'], 'callMethod'], // "callMethod" is optional
+   ['sum', [1, 3]],
+   ['sum', [2, 5], 'notify'],
+   ['sum', [7, 9], 'callMethod'], // "callMethod" is optional
    [methodName, params, mode]
 ]);
 
