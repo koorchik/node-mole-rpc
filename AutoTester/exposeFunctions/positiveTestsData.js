@@ -12,7 +12,7 @@ module.exports = [
     {
         callMethod: 'syncFunctionComplexData',
         args: ['arg1', 123],
-        expectedResult: {from: 'syncFunctionComplexData', args: ['arg1', 123] }
+        expectedResult: { from: 'syncFunctionComplexData', args: ['arg1', 123] }
     },
     {
         callMethod: 'asyncFunctionPrimitiveData',
@@ -22,6 +22,6 @@ module.exports = [
     {
         callMethod: 'asyncFunctionComplexData',
         args: ['arg1', 123],
-        expectedResult: {from: 'asyncFunctionComplexData', args: ['arg1', 123] }
+        expectedResult: { from: 'asyncFunctionComplexData', args: ['arg1', 123] }
     }
 ];

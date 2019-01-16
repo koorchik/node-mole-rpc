@@ -1,6 +1,6 @@
 function proxify(moleClient) {
     const callMethodProxy = proxifyOwnMethod(moleClient.callMethod.bind(moleClient));
-    const notifyProxy = proxifyOwnMethod(moleClient.notify.bind(moleClient))
+    const notifyProxy = proxifyOwnMethod(moleClient.notify.bind(moleClient));
 
     return new Proxy(moleClient, {
         get(target, methodName) {

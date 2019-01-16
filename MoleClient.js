@@ -2,7 +2,7 @@ const X = require('./X');
 const errorCodes = require('./errorCodes');
 
 class MoleClient {
-    constructor({transport, requestTimeout=20000}) {
+    constructor({ transport, requestTimeout = 20000 }) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
         this.transport = transport;
 
@@ -15,15 +15,15 @@ class MoleClient {
     async callMethod(method, params) {
         await this._init();
 
-        const request = this._makeRequestObject({method, params}); 
-        return this._sendRequest({object: request, id: request.id});
+        const request = this._makeRequestObject({ method, params });
+        return this._sendRequest({ object: request, id: request.id });
     }
 
     async notify(method, params) {
         await this._init();
 
-        const request = this._makeRequestObject({method, params, mode: 'notify'});
-        await this.transport.send( JSON.stringify(request) );
+        const request = this._makeRequestObject({ method, params, mode: 'notify' });
+        await this.transport.sendRequest(JSON.stringify(request));
         return true;
     }
 
@@ -34,7 +34,7 @@ class MoleClient {
         const batchRequest = [];
 
         for (const [method, params, mode] of calls) {
-            const request = this._makeRequestObject({method, params, mode, batchId});
+            const request = this._makeRequestObject({ method, params, mode, batchId });
 
             if (request.id) {
                 onlyNotifications = false;
@@ -44,9 +44,7 @@ class MoleClient {
         }
 
         if (onlyNotifications) {
-            return this.transport.send(
-                JSON.stringify(batchRequest)
-            );
+            return this.transport.send(JSON.stringify(batchRequest));
         } else {
             return this._sendRequest({ object: batchRequest, id: batchId });
         }
@@ -55,33 +53,33 @@ class MoleClient {
     async _init() {
         if (this.initialized) return;
 
-        await this.transport.onMessage(this._processResponse.bind(this));
+        await this.transport.onResponse(this._processResponse.bind(this));
 
         this.initialized = true;
     }
 
-    _sendRequest({object, id}) {
+    _sendRequest({ object, id }) {
         const data = JSON.stringify(object);
 
         return new Promise((resolve, reject) => {
-            this.pendingRequest[id] = {resolve, reject, sentObject: object};
+            this.pendingRequest[id] = { resolve, reject, sentObject: object };
 
             setTimeout(() => {
                 if (this.pendingRequest[id]) {
                     delete this.pendingRequest[id];
 
-                    reject( new X.RequestTimout() );
+                    reject(new X.RequestTimout());
                 }
             }, this.requestTimeout);
 
-            return this.transport.send(data);
+            return this.transport.sendRequest(data);
         });
     }
 
     _processResponse(data) {
         const response = JSON.parse(data);
 
-        if ( Array.isArray(response) ) {
+        if (Array.isArray(response)) {
             this._processBatchResponse(response);
         } else {
             this._processSingleCallResponse(response);
@@ -91,20 +89,20 @@ class MoleClient {
     _processSingleCallResponse(response) {
         const isSuccessfulResponse = response.hasOwnProperty('result') || false;
         const isErrorResponse = response.hasOwnProperty('error');
-        
-        if ( !isSuccessfulResponse && !isErrorResponse ) return;
+
+        if (!isSuccessfulResponse && !isErrorResponse) return;
 
         const resolvers = this.pendingRequest[response.id];
         delete this.pendingRequest[response.id];
 
         if (!resolvers) return;
-        
+
         if (isSuccessfulResponse) {
-            resolvers.resolve(response.result)
+            resolvers.resolve(response.result);
         } else if (isErrorResponse) {
             const errorObject = this._makeErrorObject(response.error);
-            resolvers.reject( errorObject );
-        } 
+            resolvers.reject(errorObject);
+        }
     }
 
     _processBatchResponse(responses) {
@@ -120,11 +118,11 @@ class MoleClient {
 
                 responseById[response.id] = response;
             } else if (response.error) {
-                errorsWithoutId.push(response.error); 
+                errorsWithoutId.push(response.error);
             }
         }
 
-        if ( !this.pendingRequest[batchId] ) return;
+        if (!this.pendingRequest[batchId]) return;
 
         const { sentObject, resolve } = this.pendingRequest[batchId];
         delete this.pendingRequest[batchId];
@@ -142,22 +140,22 @@ class MoleClient {
 
             if (response) {
                 const isSuccessfulResponse = response.hasOwnProperty('result') || false;
-                
+
                 if (isSuccessfulResponse) {
                     batchResults.push({
                         success: true,
-                        result: response.result 
+                        result: response.result
                     });
                 } else {
                     batchResults.push({
                         success: false,
-                        result: this._makeErrorObject(response.error) 
+                        result: this._makeErrorObject(response.error)
                     });
-                }                  
+                }
             } else {
                 batchResults.push({
                     success: false,
-                    error: this._makeErrorObject( errorsWithoutId[errorIdx] )
+                    error: this._makeErrorObject(errorsWithoutId[errorIdx])
                 });
                 errorIdx++;
             }
@@ -166,14 +164,14 @@ class MoleClient {
         resolve(batchResults);
     }
 
-    _makeRequestObject({method, params, mode, batchId}) {
+    _makeRequestObject({ method, params, mode, batchId }) {
         const request = {
-            jsonrpc: "2.0",
+            jsonrpc: '2.0',
             method
         };
 
         if (params && params.length) {
-            request.params = params
+            request.params = params;
         }
 
         if (mode !== 'notify') {
@@ -189,7 +187,7 @@ class MoleClient {
                 return new X.MethodNotFound();
             }
         }[errorData.code];
-        
+
         return errorBuilder();
     }
 
@@ -200,7 +198,7 @@ class MoleClient {
         let id = '';
 
         while (0 < size--) {
-            id += alphabet[Math.random() * 64 | 0]
+            id += alphabet[(Math.random() * 64) | 0];
         }
 
         return id;
