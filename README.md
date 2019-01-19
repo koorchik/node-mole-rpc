@@ -6,25 +6,25 @@ IMPORTANT: Library is in active development till version 1.0. API changes are po
 
 ## Table of contents
 
-- [Features](#features)
-- [Basic usage](#basic-usage)
-  - [Client (with Proxy support)](#client-with-proxy-support)
-  - [Client (without Proxy support)](#client-without-proxy-support)
-  - [Server (expose instance)](#server-expose-instance)
-  - [Server (expose functions)](#server-expose-functions)
-- [Advanced usage](#advanced-usage)
-- [Use cases](#use-cases)
+-   [Features](#features)
+-   [Basic usage](#basic-usage)
+    -   [Client (with Proxy support)](#client-with-proxy-support)
+    -   [Client (without Proxy support)](#client-without-proxy-support)
+    -   [Server (expose instance)](#server-expose-instance)
+    -   [Server (expose functions)](#server-expose-functions)
+-   [Advanced usage](#advanced-usage)
+-   [Use cases](#use-cases)
 
 ## Features
 
-- Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc)
-- Totally abstract implementation with zero dependencies
-- Works in NodeJs and in browser
-- You can use it to send request to webworker in your browser
-- Server can use several transports the same time
-- Lightweight
-- Modern API
-- Supports all features of JSON-RPC 2.0 (batches, notifications etc)
+-   Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc)
+-   Totally abstract implementation with zero dependencies
+-   Works in NodeJs and in browser
+-   You can use it to send request to webworker in your browser
+-   Server can use several transports the same time
+-   Lightweight
+-   Modern API
+-   Supports all features of JSON-RPC 2.0 (batches, notifications etc)
 
 ## Basic usage
 
@@ -80,7 +80,7 @@ class Calculator {
     return a + b;
   }
 
-  asyncHello(a, b) {
+  asyncSum(a, b) {
     return new Promise((resolve, reject) => {
       resolve(this.sum(a, b));
     });
@@ -182,16 +182,18 @@ const results = await client.runBatch([
 
 ### Case 4: Lightweight Inter process communication
 
+### Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)
+
 ### You can use different transport for JSON RPC
 
 So, your code does not depend on a way you communicate. You can use:
 
-- HTTP
-- WebSockets
-- MQTT
-- TCP
-- EventEmitter (communicate within one process in an abstract way)
-- Named pipe (FIFOs)
+-   HTTP
+-   WebSockets
+-   MQTT
+-   TCP
+-   EventEmitter (communicate within one process in an abstract way)
+-   Named pipe (FIFOs)
 
 ### You can use several transports the same time.
 

@@ -4,7 +4,7 @@ class MoleServer {
     constructor({ transports }) {
         if (!transports) throw new Error('TRANSPORT_REQUIRED');
 
-        this.transports = transports;
+        this.transportsToRegister = transports;
         this.methods = {};
     }
 
@@ -12,23 +12,33 @@ class MoleServer {
         this.methods = methods;
     }
 
-    async _processRequest(data) {
+    async registerTransport(transport) {
+        await transport.onData(this._processRequest.bind(this, transport));
+    }
+
+    async removeTransport(transport) {
+        await transport.shutdown(); // TODO
+    }
+
+    async _processRequest(transport, data) {
         const requestData = JSON.parse(data);
         let responseData;
 
         if (Array.isArray(requestData)) {
             // TODO Batch error handling?
-            responseData = await Promise.all(requestData.map(request => this._callMethod(request)));
+            responseData = await Promise.all(
+                requestData.map(request => this._callMethod(request, transport))
+            );
         } else {
-            responseData = await this._callMethod(requestData);
+            responseData = await this._callMethod(requestData, transport);
         }
 
         return JSON.stringify(responseData);
     }
 
-    async _callMethod(request) {
+    async _callMethod(request, transport) {
         const isRequest = request.hasOwnProperty('method');
-        if (!isRequest) return;
+        if (!isRequest) return ''; // send nothing in response
 
         const { method: methodName, params = [], id } = request;
 
@@ -51,23 +61,29 @@ class MoleServer {
                 }
             };
         } else {
+            this.currentTransport = transport;
             const result = await this.methods[methodName].apply(this.methods, params);
 
             if (!id) {
                 return ''; // For notifications do not respond. "" means send nothing
             }
 
-            response = { jsonrpc: '2.0', result, id };
+            response = {
+                jsonrpc: '2.0',
+                result: typeof result === 'undefined' ? null : result,
+                id
+            };
         }
 
         return response;
     }
 
     async run() {
-        for (const transport of this.transports) {
-            await transport.onRequest(this._processRequest.bind(this));
-            await transport.run();
+        for (const transport of this.transportsToRegister) {
+            this.registerTransport(transport);
         }
+
+        this.transportsToRegister = [];
     }
 }
 

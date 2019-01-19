@@ -7,6 +7,11 @@ function syncFunctionPrimitiveData(arg1, arg2) {
     return result;
 }
 
+function functionReturnsUndefined() {
+    lastResultsStore.functionReturnsUndefined = null;
+    return undefined;
+}
+
 function syncFunctionPrimitiveDataNoArgs() {
     const result = 'return from syncFunctionPrimitiveDataNoArgs';
 
@@ -72,6 +77,7 @@ module.exports = {
         asyncFunctionPrimitiveData,
         asyncFunctionComplexData,
         asyncFunctionLongRunning,
+        functionReturnsUndefined,
         _privateFunction
     },
     lastResultsStore

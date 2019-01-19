@@ -23,7 +23,7 @@ class MoleClient {
         await this._init();
 
         const request = this._makeRequestObject({ method, params, mode: 'notify' });
-        await this.transport.sendRequest(JSON.stringify(request));
+        await this.transport.sendData(JSON.stringify(request));
         return true;
     }
 
@@ -44,7 +44,7 @@ class MoleClient {
         }
 
         if (onlyNotifications) {
-            return this.transport.send(JSON.stringify(batchRequest));
+            return this.transport.sendData(JSON.stringify(batchRequest));
         } else {
             return this._sendRequest({ object: batchRequest, id: batchId });
         }
@@ -53,7 +53,7 @@ class MoleClient {
     async _init() {
         if (this.initialized) return;
 
-        await this.transport.onResponse(this._processResponse.bind(this));
+        await this.transport.onData(this._processResponse.bind(this));
 
         this.initialized = true;
     }
@@ -72,7 +72,7 @@ class MoleClient {
                 }
             }, this.requestTimeout);
 
-            return this.transport.sendRequest(data);
+            return this.transport.sendData(data);
         });
     }
 

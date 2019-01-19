@@ -10,6 +10,11 @@ module.exports = [
         expectedResult: 'args data "arg1 123" from syncFunctionPrimitiveData'
     },
     {
+        callMethod: 'functionReturnsUndefined',
+        args: [],
+        expectedResult: null
+    },
+    {
         callMethod: 'syncFunctionComplexData',
         args: ['arg1', 123],
         expectedResult: { from: 'syncFunctionComplexData', args: ['arg1', 123] }
