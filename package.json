@@ -1,40 +1,40 @@
 {
-  "name": "mole-rpc",
-  "version": "0.2.2",
-  "description": "Transport agnostic spec compliant JSON RPC client and server",
-  "main": "index.js",
-  "directories": {
-    "lib": "lib",
-    "test": "tests"
-  },
-  "dependencies": {
-    "chai": "^4.2.0"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/koorchik/node-mole-rpc.git"
-  },
-  "keywords": [
-    "jsonrpc",
-    "json-rpc",
-    "json",
-    "jsonrpc-2.0",
-    "rpc",
-    "http",
-    "tcp",
-    "mqtt",
-    "api",
-    "mole-rpc",
-    "mole",
-    "molerpc"
-  ],
-  "author": "koorchik",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/koorchik/node-mole-rpc/issues"
-  },
-  "homepage": "https://github.com/koorchik/node-mole-rpc#readme"
+    "name": "mole-rpc",
+    "version": "0.3.0",
+    "description": "Transport agnostic spec compliant JSON RPC client and server",
+    "main": "index.js",
+    "directories": {
+        "lib": "lib",
+        "test": "tests"
+    },
+    "dependencies": {
+        "chai": "^4.2.0"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/koorchik/node-mole-rpc.git"
+    },
+    "keywords": [
+        "jsonrpc",
+        "json-rpc",
+        "json",
+        "jsonrpc-2.0",
+        "rpc",
+        "http",
+        "tcp",
+        "mqtt",
+        "api",
+        "mole-rpc",
+        "mole",
+        "molerpc"
+    ],
+    "author": "koorchik",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/koorchik/node-mole-rpc/issues"
+    },
+    "homepage": "https://github.com/koorchik/node-mole-rpc#readme"
 }
