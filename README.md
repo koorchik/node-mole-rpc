@@ -17,15 +17,15 @@ IMPORTANT: Library is in active development till version 1.0. API changes are po
 
 ## Features
 
--   Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc). Here is the list of supported transports - https://www.npmjs.com/search?q=keywords:mole-transport
--   Zero dependencies. Mole-RPC itself has zero dependencies.
--   Works both in NodeJs and in a browser (both client anf server). For example, you can use it to send request to webworker in your browser.
--   Bidirectional websocket connections support via WS tranport. For example, you want a JSON RPC server which handles remote calls but the same time you want to send commands in opposite direction using the same connection.So, you can use connection initiated by any of the sides for the server and the client the same time.
--   Server can use several transports the same time. For example, you want an RPC server that accepts connections from your local workers by TCP and from Web browser by websocket. You can pass as many transports as you wish.
--   Lightweight
--   Modern API. Totally based on Promises and supports Proxified interface
--   Supports all features of JSON-RPC 2.0 (batches, notifications etc)
--   You can easly create own transport. Transports have simple API as possible, so it is very easy to add a new transport.
+-   **Transport agnostic** (works with HTTP, MQTT, Websocket, Browser post message etc). Here is the list of supported transports - https://www.npmjs.com/search?q=keywords:mole-transport
+-   **Zero dependencies**. Mole-RPC itself has zero dependencies.
+-   **Works both in NodeJs and in a browser** (both client anf server). For example, you can use it to send request to webworker in your browser.
+-   **Bidirectional websocket connections support** via WS tranport. For example, you want a JSON RPC server which handles remote calls but the same time you want to send commands in opposite direction using the same connection.So, you can use connection initiated by any of the sides for the server and the client the same time.
+-   **Server can use several transports the same time**. For example, you want an RPC server that accepts connections from your local workers by TCP and from Web browser by websocket. You can pass as many transports as you wish.
+-   **Lightweight**
+-   **Modern API**. Totally based on Promises and supports Proxified interface
+-   **Supports all features of JSON-RPC 2.0** (batches, notifications etc)
+-   **Easy to create own transport**. Transports have simple API as possible, so it is very easy to add a new transport.
 
 ## Basic usage
 
