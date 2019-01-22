@@ -17,14 +17,15 @@ IMPORTANT: Library is in active development till version 1.0. API changes are po
 
 ## Features
 
--   Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc)
--   Totally abstract implementation with zero dependencies
--   Works in NodeJs and in browser
--   You can use it to send request to webworker in your browser
--   Server can use several transports the same time
+-   Transport agnostic (works with HTTP, MQTT, Websocket, Browser post message etc). Here is the list of supported transports - https://www.npmjs.com/search?q=keywords:mole-transport
+-   Zero dependencies. Mole-RPC itself has zero dependencies.
+-   Works both in NodeJs and in a browser (both client anf server). For example, you can use it to send request to webworker in your browser.
+-   Bidirectional websocket connections support via WS tranport. For example, you want a JSON RPC server which handles remote calls but the same time you want to send commands in opposite direction using the same connection.So, you can use connection initiated by any of the sides for the server and the client the same time.
+-   Server can use several transports the same time. For example, you want an RPC server that accepts connections from your local workers by TCP and from Web browser by websocket. You can pass as many transports as you wish.
 -   Lightweight
--   Modern API
+-   Modern API. Totally based on Promises and supports Proxified interface
 -   Supports all features of JSON-RPC 2.0 (batches, notifications etc)
+-   You can easly create own transport. Transports have simple API as possible, so it is very easy to add a new transport.
 
 ## Basic usage
 
@@ -37,9 +38,11 @@ If you use modern JavaScript you can use proxified client.
 It allows you to do remote calls very similar to local calls
 
 ```javascript
-import MoleClientProxified from "mole-rpc/MoleClientProxified";
+import MoleClientProxified from 'mole-rpc/MoleClientProxified';
 
-const transport = // choose any transport here https://www.npmjs.com/search?q=keywords:mole-transport
+// choose any transports here
+// https://www.npmjs.com/search?q=keywords:mole-transport
+const transport = new TransportClient();
 const calculator = new MoleClientProxified({ transport });
 
 const result1 = await calculator.sum(1, 3);
@@ -53,17 +56,19 @@ await calculator.notify.sum(3, 2);
 ### Client (without Proxy support)
 
 ```javascript
-import MoleClient from "mole-rpc/MoleClient";
+import MoleClient from 'mole-rpc/MoleClient';
 
-const transport = // choose any transport here https://www.npmjs.com/search?q=keywords:mole-transport
+// choose any transports here
+// https://www.npmjs.com/search?q=keywords:mole-transport
+const transport = new TransportClient();
 const client = new MoleClient({ transport });
 
-const result1 = await client.callMethod("sum", [1, 3]);
-const result2 = await client.callMethod("sum", [2, 3]);
+const result1 = await client.callMethod('sum', [1, 3]);
+const result2 = await client.callMethod('sum', [2, 3]);
 
 // Send JSON RPC notification (fire and forget)
 // server will send no response
-await client.notify("sum", [2, 3]);
+await client.notify('sum', [2, 3]);
 ```
 
 ### Server (expose instance)
@@ -73,28 +78,31 @@ Methods which start with underscore will not be exposed.
 Built-in methods of Object base class will not be exposed.
 
 ```javascript
-import MoleServer from "mole-rpc/MoleServer";
+import MoleServer from 'mole-rpc/MoleServer';
 
 class Calculator {
-  sum(a, b) {
-    return a + b;
-  }
+    sum(a, b) {
+        return a + b;
+    }
 
-  asyncSum(a, b) {
-    return new Promise((resolve, reject) => {
-      resolve(this.sum(a, b));
-    });
-  }
+    asyncSum(a, b) {
+        return new Promise((resolve, reject) => {
+            resolve(this.sum(a, b));
+        });
+    }
 
-  _privateMethod() {
-    // will not be exposed
-  }
+    _privateMethod() {
+        // will not be exposed
+    }
 }
 
 const calculator = new Calculator();
 
-const transports = // choose any transports here https://www.npmjs.com/search?q=keywords:mole-transport
-const server = new MoleServer({transports: [] });
+// choose any transports here
+// https://www.npmjs.com/search?q=keywords:mole-transport
+const transports = [new TransportServer()];
+
+const server = new MoleServer({ transports: [] });
 server.expose(calculator);
 
 await server.run();
@@ -117,7 +125,10 @@ function asyncSum(a, b) {
    });
 }
 
-const transports = // choose any transports here https://www.npmjs.com/search?q=keywords:mole-transport
+// choose any transports here
+// https://www.npmjs.com/search?q=keywords:mole-transport
+const transports = [ new TransportServer() ];
+
 const server = new MoleServer({ transports });
 server.expose({
    sum,
@@ -176,6 +187,8 @@ const results = await client.runBatch([
 
 ### Case 1: Easy way to communicate with web-workers in your browser
 
+Usually,
+
 ### Case 2: Bypass firewall
 
 ### Case 3: Microservices via message broker
@@ -184,27 +197,4 @@ const results = await client.runBatch([
 
 ### Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)
 
-### You can use different transport for JSON RPC
-
-So, your code does not depend on a way you communicate. You can use:
-
--   HTTP
--   WebSockets
--   MQTT
--   TCP
--   EventEmitter (communicate within one process in an abstract way)
--   Named pipe (FIFOs)
-
-### You can use several transports the same time.
-
-For exampe, you want an RPC server that accepts connections from your local workers by TCP and from Web browser by websocket. You can pass as many transports as you wish.
-
-### You can use bidirectional websocket connections.
-
-For example, you want a JSON RPC server which handles remote calls but the same time you want to send commands in opposite direction the same time using the same connection.
-
-So, you can use connection initiated by any of the sides for the server and the client the same time.
-
-### You can easly create own transport.
-
-Transports have simple API as possible, so it is very easy to add a new transport.
+## How to contribute?
