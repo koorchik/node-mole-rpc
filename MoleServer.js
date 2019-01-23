@@ -38,7 +38,7 @@ class MoleServer {
 
     async _callMethod(request, transport) {
         const isRequest = request.hasOwnProperty('method');
-        if (!isRequest) return ''; // send nothing in response
+        if (!isRequest) return; // send nothing in response
 
         const { method: methodName, params = [], id } = request;
 
@@ -64,9 +64,7 @@ class MoleServer {
             this.currentTransport = transport;
             const result = await this.methods[methodName].apply(this.methods, params);
 
-            if (!id) {
-                return ''; // For notifications do not respond. "" means send nothing
-            }
+            if (!id) return; // For notifications do not respond. "" means send nothing
 
             response = {
                 jsonrpc: '2.0',
