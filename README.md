@@ -4,6 +4,8 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 IMPORTANT: Library is in active development till version 1.0. API changes are possible.
 
+![Mole RPC](docs/images/Mole-RPC.png)
+
 ## Table of contents
 
 -   [Features](#features)
@@ -197,4 +199,10 @@ Usually,
 
 ### Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)
 
-## How to contribute?
+## API
+
+### MoleClient
+
+### MoleServer
+
+## How to create own transport?
