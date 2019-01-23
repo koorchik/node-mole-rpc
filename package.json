@@ -7,6 +7,9 @@
         "lib": "lib",
         "test": "tests"
     },
+    "engines": {
+        "node": ">=8.2.0"
+    },
     "dependencies": {
         "chai": "^4.2.0"
     },
