@@ -3,6 +3,7 @@
 Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in NodeJs, Browser, Electron etc
 
 [![npm version](https://badge.fury.io/js/mole-rpc.svg)](https://badge.fury.io/js/mole-rpc)
+[![Build Status](https://travis-ci.org/koorchik/node-mole-rpc.svg?branch=master)](https://travis-ci.org/koorchik/node-mole-rpc)
 [![Known Vulnerabilities](https://snyk.io/test/github/koorchik/node-mole-rpc/badge.svg?targetFile=package.json)](https://snyk.io/test/github/koorchik/node-mole-rpc?targetFile=package.json)
 
 IMPORTANT: Library is in active development till version 1.0. API changes are possible.
