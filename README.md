@@ -8,8 +8,6 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 IMPORTANT: Library is in active development till version 1.0. API changes are possible.
 
-[![NPM Version][npm-image]][npm-url] [![NPM Downloads][downloads-image]][downloads-url] [![Package Quality][quality-image]][quality-url] [![Travis CI][travis-image]][travis-url] [![Known Vulnerabilities][snyk-image]][snyk-url]
-
 ![Mole RPC](docs/images/Mole-RPC.png)
 
 ## Table of contents
