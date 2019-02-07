@@ -10,8 +10,6 @@ IMPORTANT: Library is in active development till version 1.0. API changes are po
 
 ![Mole RPC](docs/images/mole-logo.jpg)
 
-![Mole RPC](docs/images/Mole-RPC.png)
-
 ## Table of contents
 
 -   [Features](#features)
