@@ -1,6 +1,6 @@
 {
     "name": "mole-rpc",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "description": "Transport agnostic spec compliant JSON RPC client and server",
     "main": "index.js",
     "directories": {
