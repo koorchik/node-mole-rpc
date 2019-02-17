@@ -72,7 +72,10 @@ class MoleClient {
                 }
             }, this.requestTimeout);
 
-            return this.transport.sendData(data);
+            return this.transport.sendData(data).catch(error => {
+                delete this.pendingRequest[id];
+                reject(error); // TODO new X.InternalError()
+            });
         });
     }
 
