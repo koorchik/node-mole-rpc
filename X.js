@@ -1,58 +1,65 @@
 const errorCodes = require('./errorCodes');
 
 class Base extends Error {
-    constructor(data = {}) {
+    constructor(args) {
         super();
 
-        if (!data.code) throw new Error('Code required');
-        if (!data.message) throw new Error('Message required');
+        if (!args.code) throw new Error('Code required');
+        if (!args.message) throw new Error('Message required');
 
-        this.code = data.code;
-        this.message = data.message;
+        this.code = args.code;
+        this.message = args.message;
+
+        if(args.data !== undefined) this.data = args.data;
     }
 }
 
 class MethodNotFound extends Base {
-    constructor() {
+    constructor(data) {
         super({
             code: errorCodes.METHOD_NOT_FOUND,
-            message: 'Method not found'
+            message: 'Method not found',
+            data: data
         });
     }
 }
 
 class InvalidParams extends Base {
-    constructor() {
+    constructor(data) {
         super({
             code: errorCodes.INVALID_PARAMS,
-            message: 'Invalid params'
+            message: 'Invalid params',
+            data: data
         });
     }
 }
 
 class InternalError extends Base {
-    constructor() {
+    constructor(data) {
         super({
             code: errorCodes.INTERNAL_ERROR,
-            message: 'Internal error'
+            message: 'Internal error',
+            data: data
         });
     }
 }
 
 class ParseError extends Base {
-    constructor() {
+    constructor(data) {
         super({
             code: errorCodes.PARSE_ERROR,
-            message: 'Parse error'
+            message: 'Parse error',
+            data: data
         });
     }
 }
 
 class InvalidRequest extends Base {
-    constructor() {
+    constructor(data) {
         super({
             code: errorCodes.INVALID_REQUEST,
-            message: 'Invalid request'
+            message: 'Invalid request',
+            data: data
         });
     }
 }
@@ -63,10 +70,11 @@ class ServerError extends Base {
 }
 
 class RequestTimout extends ServerError {
-    constructor() {
+    constructor(data) {
         super({
             code: -32001,
-            message: 'Request exceeded maximum execution time'
+            message: 'Request exceeded maximum execution time',
+            data: data
         });
     }
 }
