@@ -183,10 +183,26 @@ class MoleClient {
 
     _makeErrorObject(errorData) {
         const errorBuilder = {
+            [errorCodes.PARSE_ERROR]: () => {
+                return new X.ParseError();
+            },
+            [errorCodes.INVALID_REQUEST]: () => {
+                return new X.InvalidRequest();
+            },
             [errorCodes.METHOD_NOT_FOUND]: () => {
                 return new X.MethodNotFound();
+            },
+            [errorCodes.INVALID_PARAMS]: () => {
+                return new X.InvalidParams();
+            },
+            [errorCodes.INTERNAL_ERROR]: () => {
+                return new X.InternalError();
             }
         }[errorData.code];
+
+        if (!errorBuilder) {
+                return new X.ServerError(errorData);
+        }
 
         return errorBuilder();
     }
