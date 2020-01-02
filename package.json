@@ -1,45 +1,49 @@
 {
-    "name": "mole-rpc",
-    "version": "0.3.5",
-    "description": "Transport agnostic spec compliant JSON RPC client and server",
-    "main": "index.js",
-    "directories": {
-        "lib": "lib",
-        "test": "tests"
-    },
-    "engines": {
-        "node": ">=8.2.0"
-    },
-    "dependencies": {
-        "@babel/preset-es2015": "^7.0.0-beta.53",
-        "babel-cli": "^6.26.0",
-        "chai": "^4.2.0"
-    },
-    "scripts": {
-        "test": "node ./tests/autotests.js || exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/koorchik/node-mole-rpc.git"
-    },
-    "keywords": [
-        "jsonrpc",
-        "json-rpc",
-        "json",
-        "jsonrpc-2.0",
-        "rpc",
-        "http",
-        "tcp",
-        "mqtt",
-        "api",
-        "mole-rpc",
-        "mole",
-        "molerpc"
-    ],
-    "author": "koorchik",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/koorchik/node-mole-rpc/issues"
-    },
-    "homepage": "https://github.com/koorchik/node-mole-rpc#readme"
+  "name": "mole-rpc",
+  "version": "0.3.5",
+  "description": "Transport agnostic spec compliant JSON RPC client and server",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "tests"
+  },
+  "engines": {
+    "node": ">=8.2.0"
+  },
+  "dependencies": {
+    "@babel/preset-es2015": "^7.0.0-beta.53",
+    "babel-cli": "^6.26.0",
+    "chai": "^4.2.0",
+    "snyk": "^1.271.0"
+  },
+  "scripts": {
+    "test": "node ./tests/autotests.js || exit 1",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koorchik/node-mole-rpc.git"
+  },
+  "keywords": [
+    "jsonrpc",
+    "json-rpc",
+    "json",
+    "jsonrpc-2.0",
+    "rpc",
+    "http",
+    "tcp",
+    "mqtt",
+    "api",
+    "mole-rpc",
+    "mole",
+    "molerpc"
+  ],
+  "author": "koorchik",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/koorchik/node-mole-rpc/issues"
+  },
+  "homepage": "https://github.com/koorchik/node-mole-rpc#readme",
+  "snyk": true
 }
