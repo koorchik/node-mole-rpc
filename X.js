@@ -1,14 +1,14 @@
 const errorCodes = require('./errorCodes');
 
 class Base extends Error {
-    constructor(data = {}) {
+    constructor(args = {}) {
         super();
 
-        if (!data.code) throw new Error('Code required');
-        if (!data.message) throw new Error('Message required');
+        if (!args.code) throw new Error('Code required');
+        if (!args.message) throw new Error('Message required');
 
-        this.code = data.code;
-        this.message = data.message;
+        this.code = args.code;
+        this.message = args.message;
     }
 }
 
@@ -71,6 +71,17 @@ class RequestTimout extends ServerError {
     }
 }
 
+class ExecutionError extends ServerError {
+    constructor({data = null} = {}) {
+        super({
+            code: -32002,
+            message: 'Method has returned error'
+        });
+
+        this.data = data;
+    }
+}
+
 module.exports = {
     Base,
     MethodNotFound,
@@ -79,5 +90,6 @@ module.exports = {
     InternalError,
     ServerError,
     ParseError,
-    RequestTimout
+    RequestTimout,
+    ExecutionError
 };

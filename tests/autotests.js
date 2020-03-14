@@ -1,7 +1,10 @@
+const AutoTester = require('mole-rpc-autotester');
+
 const MoleClient = require('../MoleClient');
 const MoleClientProxified = require('../MoleClientProxified');
 const MoleServer = require('../MoleServer');
-const AutoTester = require('../AutoTester');
+const X = require('../X');
+
 
 const TransportClient = require('./TransportClient');
 const TransportServer = require('./TransportServer');
@@ -15,6 +18,7 @@ async function main() {
     const clients = await prepareClients(emitter);
 
     const autoTester = new AutoTester({
+        X,
         server,
         simpleClient: clients.simpleClient,
         proxifiedClient: clients.proxifiedClient

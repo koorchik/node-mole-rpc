@@ -8,6 +8,8 @@ function proxify(moleClient) {
                 return notifyProxy;
             } else if (methodName === 'callMethod') {
                 return callMethodProxy;
+            } else if (methodName === 'options.requestTimeout') {
+                return target.requestTimeout;
             } else if (methodName === 'then') {
                 // without this you will not be able to return client from an async function.
                 // V8 will see then method and will decide that client is a promise

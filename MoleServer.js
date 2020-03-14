@@ -49,10 +49,8 @@ class MoleServer {
             methodName.startsWith('_') ||
             this.methods[methodName] === Object.prototype[methodName];
 
-        let response = {};
-
         if (methodNotFound) {
-            response = {
+            return {
                 jsonrpc: '2.0',
                 id,
                 error: {
@@ -62,18 +60,29 @@ class MoleServer {
             };
         } else {
             this.currentTransport = transport;
-            const result = await this.methods[methodName].apply(this.methods, params);
 
-            if (!id) return; // For notifications do not respond. "" means send nothing
+            try {
+                const result = await this.methods[methodName].apply(this.methods, params);
 
-            response = {
-                jsonrpc: '2.0',
-                result: typeof result === 'undefined' ? null : result,
-                id
-            };
+                if (!id) return; // For notifications do not respond. "" means send nothing
+
+                return {
+                    jsonrpc: '2.0',
+                    id,
+                    result: typeof result === 'undefined' ? null : result
+                };
+            } catch (error) {
+                return {
+                    jsonrpc: '2.0',
+                    id,
+                    error: {
+                        code: errorCodes.EXECUTION_ERROR,
+                        message: 'Method has returned error',
+                        data: (error instanceof Error ? error.message : error)
+                    }
+                };
+            }
         }
-
-        return response;
     }
 
     async run() {

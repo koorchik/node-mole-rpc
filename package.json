@@ -8,12 +8,10 @@
         "test": "tests"
     },
     "engines": {
-        "node": ">=8.2.0"
+        "node": ">=10.0.0"
     },
-    "dependencies": {
-        "@babel/preset-es2015": "^7.0.0-beta.53",
-        "babel-cli": "^6.26.0",
-        "chai": "^4.2.0"
+    "devDependencies": {
+        "mole-rpc-autotester": "^0.3.5"
     },
     "scripts": {
         "test": "node ./tests/autotests.js || exit 1"

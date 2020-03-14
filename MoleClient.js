@@ -188,10 +188,13 @@ class MoleClient {
         const errorBuilder = {
             [errorCodes.METHOD_NOT_FOUND]: () => {
                 return new X.MethodNotFound();
+            },
+            [errorCodes.EXECUTION_ERROR]: ({ data }) => {
+                return new X.ExecutionError({ data });
             }
         }[errorData.code];
 
-        return errorBuilder();
+        return errorBuilder(errorData);
     }
 
     _generateId() {
