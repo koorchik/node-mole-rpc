@@ -19,8 +19,10 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
     -   [Client (without Proxy support)](#client-without-proxy-support)
     -   [Server (expose instance)](#server-expose-instance)
     -   [Server (expose functions)](#server-expose-functions)
+    -   [Error Handling](#error-handling)
 -   [Advanced usage](#advanced-usage)
 -   [Use cases](#use-cases)
+-   [How to create own transport?](#how-to-create-own-transport)
 
 ## Features
 
@@ -32,7 +34,7 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 -   **Lightweight**
 -   **Modern API**. Totally based on Promises and supports Proxified interface
 -   **Supports all features of JSON-RPC 2.0** (batches, notifications etc)
--   **Easy to create own transport**. Transports have simple API as possible, so it is very easy to add a new transport.
+-   **Easy to create own transport**. Transports have simple API as possible, so it is very easy to add a new transport. See ["How to create own transport?"](how-to-create-own-transport) section.
 
 ## Motivation
 
@@ -239,6 +241,75 @@ server.expose({
 await server.run();
 ```
 
+### Error Handling
+
+When an rpc call encounters an error, the server will return an object with an error code. See [JSON RPC 2.0 Specification](https://www.jsonrpc.org/specification#error_object) for details.
+
+Getting an error Mole RPC Client will throw (reject promise) a corresponding exception.
+
+List of available exception classes:
+
+* Base
+  * MethodNotFound
+  * InvalidRequest
+  * InvalidParams
+  * InternalError
+  * ParseError
+  * ServerError - custom server errors
+    * RequestTimout - Request exceeded maximum execution time
+    * ExecutionError - Method has returned an error. 
+
+Every exception object has following properties:
+
+1. "code" - numeric code from the spec
+2. "message" - human readable message.
+3. "data" - additional data. Used only by ExecutionError, contains error returned by method 
+
+**How to return an error from method?**
+
+Nothing special required. Just reject promise or throw an exception.
+
+```js
+
+function divide(a, b) {
+  if (b == 0) throw "devision by zero";
+  // throw 'new Error("devision by zero")' will behave the same
+  return a / b; 
+} 
+
+function loadUser(userId) {
+  ...
+  // you can throw an object
+  return Promise.reject({ error: 'NOT_EXISTING_USER'})
+}
+
+server.expose({ divide, loadUser });
+```
+
+**How to handle the error?**
+
+Nothing special. Just catch the exception.
+
+```js
+const X = require('mole-rpc/X');
+
+async function main() {
+  ... 
+
+  try {
+      await client.divide(2, 3);
+  } catch (error) {
+    if (error instanceof X.ExecutionError) {
+      console.log('METHOD RETURNED ERROR', error.data);
+    } else if (error instanceof X.RequestTimout) {
+      console.log('METHOD s ALLOWED EXECUTION TIME');
+    } else {
+      throw error;
+    } 
+  }
+}
+```
+
 ## Advanced usage
 
 ```javascript
@@ -283,16 +354,42 @@ const results = await client.runBatch([
 
 ```
 
-## Use cases (TODO)
+## Use cases
 
 ### Case 1: Easy way to communicate with web-workers in your browser
 
+To communicate with web worker, in most cases, you will try to simulate JSON RPC having "id", "method", "params" in each request and "id", "result" in each response.
+
+With Mole RCP there is no need to use custom hacks. Just use [mole-rpc-transport-webworker](https://www.npmjs.com/package/mole-rpc-transport-webworker). 
+
+
 ### Case 2: Bypass firewall
+
+You have a device (or service) in local network and want to manage it. You cannot get to it from Internet, as the device is hidden behind NAT. But your device can connect to your internet server. So, with Mole RPC your device (RPC Server) can connect to the your internet server (RPC Client) and after that the internet server will be able to call methods on the devices hidden behind NAT.
+
+Here is an example  - https://github.com/koorchik/node-mole-rpc-transport-ws/tree/master/examples/server-connects-to-client 
+
+This case is rather hard to implement with other JSON RPC modules but with Mole RPC it works by design. 
+
 
 ### Case 3: Microservices via message broker
 
+You have a lot microservices and you want allow them to communicate with each other. The best solutions here is to have a message broker. Mole RPC has MQTT transport which will allow to setup the communication easily.
+
+See, [mole-rpc-transport-mqtt](https://www.npmjs.com/package/mole-rpc-transport-mqtt)
+
 ### Case 4: Lightweight Inter process communication
+
+Websocket is a good options for it. With websocker transport you can connect browser to server and the same time it suitable for connecting to server processes. It is not only option, you not limited to use any transport you wish. 
 
 ### Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)
 
+You can pass multiple transports to MoleServer. This transport can be of different types. For example, you can expose the same methods via MQTT and WebSockets the same time.
+
 ## How to create own transport?
+
+Transports have simple API as possible, so it is very easy to add a new transport. MoleRPC has strong separation between protocol handler and transports. Transports know nothing about what is inside payload. Therefore, they are very simple. Usually, is is just two classes with 1-2 methods.
+
+The best way to start is just to look at source code of existing implemenations - https://www.npmjs.com/search?q=keywords:mole-transport 
+
+Moreover, we have created an [AutoTester](https://www.npmjs.com/package/mole-rpc-autotester) for transports. Use [AutoTester](https://www.npmjs.com/package/mole-rpc-autotester) to cover 95% of cases and just add several tests to cover transport specific logic like reconnections etc.
