@@ -176,19 +176,19 @@ Built-in methods of Object base class will not be exposed.
 import MoleServer from 'mole-rpc/MoleServer';
 
 class Calculator {
-    sum(a, b) {
-        return a + b;
-    }
+  sum(a, b) {
+    return a + b;
+  }
 
-    asyncSum(a, b) {
-        return new Promise((resolve, reject) => {
-            resolve(this.sum(a, b));
-        });
-    }
+  asyncSum(a, b) {
+    return new Promise((resolve, reject) => {
+        resolve(this.sum(a, b));
+    });
+  }
 
-    _privateMethod() {
-        // will not be exposed
-    }
+  _privateMethod() {
+    // will not be exposed
+  }
 }
 
 const calculator = new Calculator();
@@ -211,13 +211,13 @@ You can expose functions directly
 import MoleServer from "mole-rpc/MoleServer";
 
 function sum(a, b) {
-   return a+b;
+  return a+b;
 }
 
 function asyncSum(a, b) {
-   return new Promise((resolve, reject) {
-      resolve( sum(a, b) );
-   });
+  return new Promise((resolve, reject) {
+    resolve( sum(a, b) );
+  });
 }
 
 // choose any transports here
@@ -226,8 +226,8 @@ const transports = [ new TransportServer() ];
 
 const server = new MoleServer({ transports });
 server.expose({
-   sum,
-   asyncSum
+  sum,
+  asyncSum
 });
 
 await server.run();
@@ -237,7 +237,6 @@ await server.run();
 
 ```javascript
 
-
 // Proxified client: explicit call
 await calculator.callMethod.sum(1, 2); // the same as "calculator.sum(1, 2)"
 // Can be usefull if your server method is a reserverd name.
@@ -246,34 +245,34 @@ await proxifiedClient.callMethod.notify("Hello");
 
 // Proxified client: run request in parallel
 const promises = [
-   calculator.sum(1, 2);
-   calculator.notify.sum(1, 2);
+  calculator.sum(1, 2);
+  calculator.notify.sum(1, 2);
 ];
 
 const results = await Promise.all(promises);
 
 // Simple client: run in parallel
 const promises = [
-   client.callMethod('sum', [1, 2]);
-   client.notify('sum', [1, 2]);
+  client.callMethod('sum', [1, 2]);
+  client.notify('sum', [1, 2]);
 ];
 
 const results = await Promise.all(promises);
 
 // Simple client: run batch
 const results = await client.runBatch([
-   // [methodName, params, mode]
-   ['sum', [1, 3]],
-   ['sum', [2, 5], 'notify'],
-   ['sum', [7, 9], 'callMethod'], // "callMethod" is optional
+  // [methodName, params, mode]
+  ['sum', [1, 3]],
+  ['sum', [2, 5], 'notify'],
+  ['sum', [7, 9], 'callMethod'], // "callMethod" is optional
 ]);
 
 
 // Result structure
 [
-   {success: true, result: 123},
-   null, // no response for notification
-   {success: false, error: errorObject}
+  {success: true, result: 123},
+  null, // no response for notification
+  {success: false, error: errorObject}
 ];
 
 ```
