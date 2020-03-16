@@ -44,12 +44,13 @@ Yet another JSON-RPC library? Why do we need it? The reality, that there is no t
 2. Not possible to add a new transport.
 3. For some possible, but you need to duplicate almost all protocol logic in every transport.
 4. Bidirectional websocket connections are not supported.
-5. Leaking transport abtractions (like topic name in MQTT needs to be the same as method name).
-6. Huge codebase with tons of classes (JSON RPC should not look like this)
-7. No promise based API.
-8. Everything is bundled to one large package with high level of coupling.
-9. Bugs, not tests.
-10. etc 
+5. Reverse connection (when server connect to client via websocket and after that the client send commands to the server)
+6. Leaking transport abtractions (like topic name in MQTT needs to be the same as method name).
+7. Huge codebase with tons of classes (JSON RPC should not look like this)
+8. No promise based API.
+9. Everything is bundled to one large package with high level of coupling.
+10. Bugs, not tests.
+11. etc 
 
 Mole-RPC solves all of the issues described above.
 
