@@ -11,8 +11,11 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 ## Table of contents
 
 -   [Features](#features)
+-   [Motivation](#motivation)
 -   [Basic usage](#basic-usage)
-    -   [Client (with Proxy support)](#client-with-proxy-support)
+    -   [Simple example with websocket transport](#simple-example-with-websocket-transport)
+-   [API examples](#api-examples)
+    -   [Proxified Client](#proxified-client)
     -   [Client (without Proxy support)](#client-without-proxy-support)
     -   [Server (expose instance)](#server-expose-instance)
     -   [Server (expose functions)](#server-expose-functions)
@@ -52,9 +55,11 @@ Mole-RPC solves all of the issues described above.
 
 ## Basic usage
 
-This module is transport agnostics. So, [you can choose any transport you need](https://www.npmjs.com/search?q=mole-rpc-transport)
+This module is transport agnostics. So, [you can choose any transport you need](https://www.npmjs.com/search?q=keywords:mole-transport)
 
-### Simple example with websocket transport (WebSocketServer for server)
+### Simple example with websocket transport 
+
+In this example, we use WebSocketServer for RPC server but you you can use simple WS server transport as well. This can be useful for the case when server connects to client (you can bypass firefall in this way).
 
 **Server**
 ```js
