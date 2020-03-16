@@ -6,8 +6,6 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 [![Build Status](https://travis-ci.org/koorchik/node-mole-rpc.svg?branch=master)](https://travis-ci.org/koorchik/node-mole-rpc)
 [![Known Vulnerabilities](https://snyk.io/test/github/koorchik/node-mole-rpc/badge.svg?targetFile=package.json)](https://snyk.io/test/github/koorchik/node-mole-rpc?targetFile=package.json)
 
-IMPORTANT: Library is in active development till version 1.0. API changes are possible.
-
 ![Mole RPC](docs/images/mole-logo.jpg)
 
 ## Table of contents
@@ -33,12 +31,103 @@ IMPORTANT: Library is in active development till version 1.0. API changes are po
 -   **Supports all features of JSON-RPC 2.0** (batches, notifications etc)
 -   **Easy to create own transport**. Transports have simple API as possible, so it is very easy to add a new transport.
 
+## Motivation
+
+Yet another JSON-RPC library? Why do we need it? The reality, that there is no transport agnostic JSON-RPC library for nodejs. One of our projects required JSON RPC over MQTT and unfortunetely we were not able to find a good solution. 
+
+**Key issues with existing libraries:**
+
+1. No multiple transports support.
+2. Not possible to add a new transport.
+3. For some possible, but you need to duplicate almost all protocol logic in every transport.
+4. Bidirectional websocket connections are not supported.
+5. Leaking transport abtractions (like topic name in MQTT needs to be the same as method name).
+6. Huge codebase with tons of classes (JSON RPC should not look like this)
+7. No promise based API.
+8. Everything is bundled to one large package with high level of coupling.
+9. Bugs, not tests.
+10. etc 
+
+Mole-RPC solves all of the issues described above.
+
 ## Basic usage
 
-You a lot of working examples you can find here too
-https://github.com/koorchik/node-mole-rpc-examples
+This module is transport agnostics. So, [you can choose any transport you need](https://www.npmjs.com/search?q=mole-rpc-transport)
 
-### Client (with Proxy support)
+### Simple example with websocket transport (WebSocketServer for server)
+
+**Server**
+```js
+const MoleServer = require('mole-rpc/MoleServer');
+const TransportServerWSS = require('mole-rpc-transport-ws/TransportServerWSS');
+const WebSocket = require('ws');
+const WSS_PORT = 12345;
+
+function sum(a, b) { return a + b }
+function multiply(a, b) { return a * b } 
+
+async function main() {
+  const server = new MoleServer({ 
+    transports: prepareTransports() 
+  });
+
+  server.expose({ sum, multiply });
+  await server.run();
+}
+
+function prepareTransports() {
+  return [
+    new TransportServerWSS({
+      wss: new WebSocket.Server({ 
+        port: WSS_PORT 
+      })
+    })
+  ];
+}
+
+main().catch(console.error);
+```
+
+**Client (with Proxy support)**
+
+```js
+const MoleClient = require('mole-rpc/MoleClientProxified');
+const X = require('mole-rpc/X');
+const TransportClientWS = require('mole-rpc-transport-ws/TransportClientWS');
+
+
+const WebSocket = require('ws');
+const WSS_PORT = 12345;
+
+async function main() {
+  const client = new MoleClient({
+    requestTimeout: 1000,
+    transport: prepareTransport()
+  });
+
+  try {
+      console.log( await client.sum(2, 3) );
+  } catch (error) {
+    if (error instanceof X.ExecutionError) {
+      console.log('ERROR', error.data);
+    } else {
+      throw error;
+    }
+  }
+}
+
+function prepareTransport() {
+  return new TransportClientWS({
+    wsBuilder: () => new WebSocket(`ws://localhost:${WSS_PORT}`)
+  });
+}
+
+main().then(console.log, console.error);
+```
+
+## API examples
+
+### Proxified client
 
 If you use modern JavaScript you can use proxified client.
 It allows you to do remote calls very similar to local calls
@@ -173,10 +262,10 @@ const results = await Promise.all(promises);
 
 // Simple client: run batch
 const results = await client.runBatch([
+   // [methodName, params, mode]
    ['sum', [1, 3]],
    ['sum', [2, 5], 'notify'],
    ['sum', [7, 9], 'callMethod'], // "callMethod" is optional
-   [methodName, params, mode]
 ]);
 
 
@@ -189,11 +278,9 @@ const results = await client.runBatch([
 
 ```
 
-## Use cases
+## Use cases (TODO)
 
 ### Case 1: Easy way to communicate with web-workers in your browser
-
-Usually,
 
 ### Case 2: Bypass firewall
 
@@ -202,11 +289,5 @@ Usually,
 ### Case 4: Lightweight Inter process communication
 
 ### Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)
-
-## API
-
-### MoleClient
-
-### MoleServer
 
 ## How to create own transport?
