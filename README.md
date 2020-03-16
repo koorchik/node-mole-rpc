@@ -103,7 +103,6 @@ const MoleClient = require('mole-rpc/MoleClientProxified');
 const X = require('mole-rpc/X');
 const TransportClientWS = require('mole-rpc-transport-ws/TransportClientWS');
 
-
 const WebSocket = require('ws');
 const WSS_PORT = 12345;
 
@@ -302,7 +301,7 @@ async function main() {
     if (error instanceof X.ExecutionError) {
       console.log('METHOD RETURNED ERROR', error.data);
     } else if (error instanceof X.RequestTimout) {
-      console.log('METHOD s ALLOWED EXECUTION TIME');
+      console.log('METHOD EXCEEDED ALLOWED EXECUTION TIME');
     } else {
       throw error;
     } 
