@@ -22,6 +22,14 @@ class MoleServer {
 
     async _processRequest(transport, data) {
         const requestData = JSON.parse(data);
+
+        const isRequest = requestData.hasOwnProperty('method')
+            || (Array.isArray(requestData)
+                && requestData[0]
+                && requestData[0].hasOwnProperty('method'));
+
+        if (!isRequest) return;
+
         let responseData;
 
         if (Array.isArray(requestData)) {
@@ -37,9 +45,6 @@ class MoleServer {
     }
 
     async _callMethod(request, transport) {
-        const isRequest = request.hasOwnProperty('method');
-        if (!isRequest) return; // send nothing in response
-
         const { method: methodName, params = [], id } = request;
 
         const methodNotFound =
