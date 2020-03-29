@@ -113,4 +113,4 @@ class MoleServer<Methods extends ExposedMethods> {
     }
 }
 
-export default MoleServer;
+export = MoleServer;

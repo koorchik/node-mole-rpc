@@ -6,7 +6,10 @@ import {
     RequestObject,
     TransportClient,
     MethodResult,
-    MethodError, ResultResponseObject, ResponseObject, isErrorResponse, isSuccessfulResponse
+    MethodError,
+    ResponseObject,
+    isErrorResponse,
+    isSuccessfulResponse
 } from './types';
 import * as X from './X';
 import * as errorCodes from './errorCodes';
@@ -244,4 +247,4 @@ class MoleClient<Methods extends ExposedMethods> {
     }
 }
 
-export default MoleClient;
+export = MoleClient;

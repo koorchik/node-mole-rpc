@@ -10,6 +10,18 @@ export interface TransportClient {
     onData(callback: (data: string) => void): Promise<void>;
 }
 
+export type MoleClientProxified<Methods extends ExposedMethods> = {
+    [Key in Exclude<MethodName<Methods>, 'notify' | 'callMethod' | 'options.requestTimeout'>]: Promise<MethodResult<Methods, Key>>
+} & {
+    notify: {
+        [Key in MethodName<Methods>]: Promise<void>;
+    };
+    callMethod: {
+        [Key in MethodName<Methods>]: Promise<MethodResult<Methods, Key>>;
+    };
+}
+
+
 export type ExposedMethods = {
     [key: string]: (...args: any[]) => any
 }

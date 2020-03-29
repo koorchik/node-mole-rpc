@@ -1,17 +1,5 @@
 import MoleClient from './MoleClient';
-import { ExposedMethods, MethodName, MethodResult } from './types';
-
-
-export type MoleClientProxified<Methods extends ExposedMethods> = {
-    [Key in Exclude<MethodName<Methods>, 'notify' | 'callMethod' | 'options.requestTimeout'>]: Promise<MethodResult<Methods, Key>>
-} & {
-    notify: {
-        [Key in MethodName<Methods>]: Promise<void>;
-    };
-    callMethod: {
-        [Key in MethodName<Methods>]: Promise<MethodResult<Methods, Key>>;
-    };
-}
+import { ExposedMethods, MoleClientProxified } from './types';
 
 function proxify<Methods extends ExposedMethods>(moleClient: MoleClient<Methods>): MoleClientProxified<Methods> {
     const callMethodProxy = proxifyOwnMethod(moleClient.callMethod.bind(moleClient));
@@ -47,4 +35,4 @@ function proxifyOwnMethod(ownMethod) {
     });
 }
 
-export default proxify;
+export = proxify;

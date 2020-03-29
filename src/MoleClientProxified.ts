@@ -1,6 +1,6 @@
-import proxify, { MoleClientProxified } from './proxify';
+import proxify from './proxify';
 import MoleClient from './MoleClient';
-import { ExposedMethods, TransportClient } from './types';
+import { ExposedMethods, MoleClientProxified, TransportClient } from './types';
 
 // @ts-ignore
 class MoleClientProxifiedImpl<Methods extends ExposedMethods> extends MoleClient<Methods> implements MoleClientProxified<Methods> {
@@ -11,4 +11,4 @@ class MoleClientProxifiedImpl<Methods extends ExposedMethods> extends MoleClient
     }
 }
 
-export default MoleClientProxifiedImpl;
+export = MoleClientProxifiedImpl;
