@@ -1,6 +1,7 @@
 import {
     ErrorResponseObject,
-    ExposedMethods, MethodName,
+    ExposedMethods,
+    MethodName,
     RequestObject,
     ResultResponseObject,
     TransportServer
@@ -30,7 +31,7 @@ class MoleServer<Methods extends ExposedMethods> {
     private methods: Partial<Methods>;
     private currentTransport?: TransportServer;
 
-    constructor({ transports }) {
+    constructor({ transports }: { transports: TransportServer[] }) {
         if (!transports) throw new Error('TRANSPORT_REQUIRED');
 
         this.transportsToRegister = transports;

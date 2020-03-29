@@ -29,7 +29,7 @@ interface BatchPendingRequest<Methods extends ExposedMethods, Method extends Met
 }
 
 class MoleClient<Methods extends ExposedMethods> {
-    private readonly requestTimeout: number;
+    readonly requestTimeout: number;
     private readonly pendingRequest: { [key: string]: PendingRequest<Methods, keyof Methods> };
     private initialized: boolean;
     private transport: TransportClient;
