@@ -16,7 +16,7 @@
     },
     "scripts": {
         "build": "tsc",
-        "test": "node ./tests/autotests.js || exit 1"
+        "test": "npm run build && node ./tests/autotests.js || exit 1"
     },
     "repository": {
         "type": "git",
