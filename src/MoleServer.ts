@@ -1,4 +1,10 @@
-import { ExposedMethods, RequestObject, ResponseObject, TransportServer } from './types';
+import {
+    ErrorResponseObject,
+    ExposedMethods, MethodName,
+    RequestObject,
+    ResultResponseObject,
+    TransportServer
+} from './types';
 import * as errorCodes from './errorCodes';
 
 
@@ -19,9 +25,9 @@ function isContainsMethod<Methods extends ExposedMethods>(methods: Methods, meth
         && this.methods[methodName] !== Object.prototype[methodName];
 }
 
-class MoleServer {
+class MoleServer<Methods extends ExposedMethods> {
     private transportsToRegister: TransportServer[];
-    private methods: ExposedMethods;
+    private methods: Partial<Methods>;
     private currentTransport?: TransportServer;
 
     constructor({ transports }) {
@@ -57,10 +63,19 @@ class MoleServer {
         return JSON.stringify(responseData);
     }
 
-    async _callMethod(request, transport): Promise<ResponseObject> {
+    async _callMethod<Method extends MethodName<Methods>>(request: RequestObject<Methods, Method>, transport: TransportServer): Promise<ResultResponseObject<Methods, Method> | ErrorResponseObject> {
         const { method: methodName, params = [], id } = request;
 
-        if (isContainsMethod(this.methods, methodName)) {
+        if (!isContainsMethod(this.methods, methodName)) {
+            return {
+                jsonrpc: '2.0',
+                id,
+                error: {
+                    code: errorCodes.METHOD_NOT_FOUND,
+                    message: 'Method not found'
+                }
+            };
+        } else {
             this.currentTransport = transport;
 
             try {
@@ -84,15 +99,6 @@ class MoleServer {
                     }
                 };
             }
-        } else {
-            return {
-                jsonrpc: '2.0',
-                id,
-                error: {
-                    code: errorCodes.METHOD_NOT_FOUND,
-                    message: 'Method not found'
-                }
-            };
         }
     }
 
