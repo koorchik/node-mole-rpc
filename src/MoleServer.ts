@@ -20,10 +20,10 @@ function isRequestObject(requestData: any): requestData is RequestObject<any, an
 function isContainsMethod<Methods extends ExposedMethods>(methods: Methods, methodName: string | number | symbol): methodName is keyof Methods {
     return typeof methodName === 'string'
         && methods[methodName]
-        && typeof this.methods[methodName] === 'function'
+        && typeof methods[methodName] === 'function'
         && methodName !== 'constructor'
         && !methodName.startsWith('_')
-        && this.methods[methodName] !== Object.prototype[methodName];
+        && methods[methodName] !== Object.prototype[methodName];
 }
 
 class MoleServer<Methods extends ExposedMethods> {
