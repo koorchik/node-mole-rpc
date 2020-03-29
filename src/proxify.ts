@@ -1,4 +1,7 @@
-function proxify(moleClient) {
+import MoleClient from './MoleClient';
+import { ExposedMethods, MoleClientProxified } from './types';
+
+function proxify<Methods extends ExposedMethods>(moleClient: MoleClient<Methods>): MoleClientProxified<Methods> {
     const callMethodProxy = proxifyOwnMethod(moleClient.callMethod.bind(moleClient));
     const notifyProxy = proxifyOwnMethod(moleClient.notify.bind(moleClient));
 
@@ -18,7 +21,7 @@ function proxify(moleClient) {
                 return (...params) => target.callMethod.call(target, methodName, params);
             }
         }
-    });
+    }) as never as MoleClientProxified<Methods>;
 }
 
 function proxifyOwnMethod(ownMethod) {
@@ -32,4 +35,4 @@ function proxifyOwnMethod(ownMethod) {
     });
 }
 
-module.exports = proxify;
+export = proxify;

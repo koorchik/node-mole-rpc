@@ -1,8 +1,43 @@
-const X = require('./X');
-const errorCodes = require('./errorCodes');
+import {
+    ExposedMethods,
+    MethodParams,
+    Mode,
+    MethodName,
+    RequestObject,
+    TransportClient,
+    MethodResult,
+    MethodError,
+    ResponseObject,
+    isErrorResponse,
+    isSuccessfulResponse
+} from './types';
+import * as X from './X';
+import * as errorCodes from './errorCodes';
 
-class MoleClient {
-    constructor({ transport, requestTimeout = 20000 }) {
+
+type PendingRequest<Methods extends ExposedMethods, Method extends MethodName<Methods>> =
+    BatchPendingRequest<Methods, Method>
+    | SinglePendingRequest<Methods, Method>;
+
+interface SinglePendingRequest<Methods extends ExposedMethods, Method extends MethodName<Methods>> {
+    resolve: (result: MethodResult<Methods, Method>) => void;
+    reject: (error: MethodError) => void;
+    sentObject: RequestObject<Methods, Method>;
+}
+
+interface BatchPendingRequest<Methods extends ExposedMethods, Method extends MethodName<Methods>> {
+    resolve: (result: Array<null | { success: true; result: MethodResult<Methods, Method> } | { success: false; result: Error } | { success: false; error: Error }>) => void;
+    reject: (error: MethodError) => void;
+    sentObject: Array<RequestObject<Methods, Method>>;
+}
+
+class MoleClient<Methods extends ExposedMethods> {
+    readonly requestTimeout: number;
+    private readonly pendingRequest: { [key: string]: PendingRequest<Methods, keyof Methods> };
+    private initialized: boolean;
+    private transport: TransportClient;
+
+    constructor({ transport, requestTimeout = 20000 }: { transport: TransportClient, requestTimeout?: number }) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
         this.transport = transport;
 
@@ -12,14 +47,14 @@ class MoleClient {
         this.initialized = false;
     }
 
-    async callMethod(method, params) {
+    async callMethod<Method extends keyof Methods>(method: Method, params: MethodParams<Methods, Method>): Promise<MethodResult<Methods, Method>> {
         await this._init();
 
         const request = this._makeRequestObject({ method, params });
         return this._sendRequest({ object: request, id: request.id });
     }
 
-    async notify(method, params) {
+    async notify<Method extends keyof Methods>(method: Method, params: MethodParams<Methods, Method>): Promise<true> {
         await this._init();
 
         const request = this._makeRequestObject({ method, params, mode: 'notify' });
@@ -43,14 +78,12 @@ class MoleClient {
             batchRequest.push(request);
         }
 
-        if (onlyNotifications) {
-            return this.transport.sendData(JSON.stringify(batchRequest));
-        } else {
-            return this._sendRequest({ object: batchRequest, id: batchId });
-        }
+        return onlyNotifications
+            ? this.transport.sendData(JSON.stringify(batchRequest))
+            : this._sendRequest({ object: batchRequest, id: batchId });
     }
 
-    async _init() {
+    async _init(): Promise<void> {
         if (this.initialized) return;
 
         await this.transport.onData(this._processResponse.bind(this));
@@ -58,11 +91,18 @@ class MoleClient {
         this.initialized = true;
     }
 
-    _sendRequest({ object, id }) {
+    private _sendRequest<Method extends keyof Methods>(params: { object: Array<RequestObject<Methods, Method>>; id: string }): Promise<Array<MethodResult<Methods, Method>>>;
+    private _sendRequest<Method extends keyof Methods>(params: { object: RequestObject<Methods, Method>; id: string }): Promise<MethodResult<Methods, Method>>;
+    private _sendRequest<Method extends keyof Methods>(params: { object: RequestObject<Methods, Method> | Array<RequestObject<Methods, Method>>; id: string }): Promise<MethodResult<Methods, Method> | Array<MethodResult<Methods, Method>>> {
+        const { object, id } = params;
         const data = JSON.stringify(object);
 
         return new Promise((resolve, reject) => {
-            this.pendingRequest[id] = { resolve, reject, sentObject: object };
+            this.pendingRequest[id] = {
+                resolve,
+                reject,
+                sentObject: object
+            } as BatchPendingRequest<Methods, Method> | SinglePendingRequest<Methods, Method>;
 
             setTimeout(() => {
                 if (this.pendingRequest[id]) {
@@ -79,8 +119,8 @@ class MoleClient {
         });
     }
 
-    _processResponse(data) {
-        const response = JSON.parse(data);
+    private _processResponse(data: string): void {
+        const response: ResponseObject<any, any> | Array<ResponseObject<any, any>> = JSON.parse(data);
 
         if (Array.isArray(response)) {
             this._processBatchResponse(response);
@@ -89,26 +129,23 @@ class MoleClient {
         }
     }
 
-    _processSingleCallResponse(response) {
-        const isSuccessfulResponse = response.hasOwnProperty('result') || false;
-        const isErrorResponse = response.hasOwnProperty('error');
-
-        if (!isSuccessfulResponse && !isErrorResponse) return;
-
+    private _processSingleCallResponse<Method extends MethodName<Methods>>(response: ResponseObject<Methods, Method>): void {
         const resolvers = this.pendingRequest[response.id];
         delete this.pendingRequest[response.id];
 
         if (!resolvers) return;
 
-        if (isSuccessfulResponse) {
+        if (isSuccessfulResponse(response)) {
             resolvers.resolve(response.result);
-        } else if (isErrorResponse) {
+        }
+
+        if (isErrorResponse(response)) {
             const errorObject = this._makeErrorObject(response.error);
             resolvers.reject(errorObject);
         }
     }
 
-    _processBatchResponse(responses) {
+    private _processBatchResponse<Method extends MethodName<Methods>>(responses: Array<ResponseObject<Methods, Method>>): void {
         let batchId;
         const responseById = {};
         const errorsWithoutId = [];
@@ -120,17 +157,17 @@ class MoleClient {
                 }
 
                 responseById[response.id] = response;
-            } else if (response.error) {
+            } else if ('error' in response) {
                 errorsWithoutId.push(response.error);
             }
         }
 
         if (!this.pendingRequest[batchId]) return;
 
-        const { sentObject, resolve } = this.pendingRequest[batchId];
+        const { sentObject, resolve } = this.pendingRequest[batchId] as BatchPendingRequest<Methods, Method>;
         delete this.pendingRequest[batchId];
 
-        const batchResults = [];
+        const batchResults: Array<null | { success: true; result: MethodResult<Methods, Method> } | { success: false; result: Error } | { success: false; error: Error }> = [];
         let errorIdx = 0;
         for (const request of sentObject) {
             if (!request.id) {
@@ -142,9 +179,7 @@ class MoleClient {
             const response = responseById[request.id];
 
             if (response) {
-                const isSuccessfulResponse = response.hasOwnProperty('result') || false;
-
-                if (isSuccessfulResponse) {
+                if ('result' in response) {
                     batchResults.push({
                         success: true,
                         result: response.result
@@ -167,8 +202,9 @@ class MoleClient {
         resolve(batchResults);
     }
 
-    _makeRequestObject({ method, params, mode, batchId }) {
-        const request = {
+    private _makeRequestObject<Method extends MethodName<Methods>, Params extends MethodParams<Methods, Method>>(options: { method: Method, params: Params, mode?: Mode, batchId?: string }): RequestObject<Methods, Method> {
+        const { method, params, mode = 'callMethod', batchId } = options;
+        const request: RequestObject<Methods, Method> = {
             jsonrpc: '2.0',
             method
         };
@@ -184,7 +220,7 @@ class MoleClient {
         return request;
     }
 
-    _makeErrorObject(errorData) {
+    private _makeErrorObject(errorData?: { code: number; data?: any, message?: string }): X.Base<number> {
         const errorBuilder = {
             [errorCodes.METHOD_NOT_FOUND]: () => {
                 return new X.MethodNotFound();
@@ -192,12 +228,12 @@ class MoleClient {
             [errorCodes.EXECUTION_ERROR]: ({ data }) => {
                 return new X.ExecutionError({ data });
             }
-        }[errorData.code];
+        }[errorData?.code];
 
-        return errorBuilder(errorData);
+        return errorBuilder ? errorBuilder(errorData) : new Error(errorData?.message);
     }
 
-    _generateId() {
+    private _generateId(): string {
         // from "nanoid" package
         const alphabet = 'bjectSymhasOwnProp-0123456789ABCDEFGHIJKLMNQRTUVWXYZ_dfgiklquvxz';
         let size = 10;
@@ -211,4 +247,4 @@ class MoleClient {
     }
 }
 
-module.exports = MoleClient;
+export = MoleClient;

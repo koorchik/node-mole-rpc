@@ -2,7 +2,7 @@
     "name": "mole-rpc",
     "version": "1.0.4",
     "description": "Transport agnostic spec compliant JSON RPC client and server",
-    "main": "index.js",
+    "main": "dist",
     "directories": {
         "lib": "lib",
         "test": "tests"
@@ -11,10 +11,12 @@
         "node": ">=10.0.0"
     },
     "devDependencies": {
-        "mole-rpc-autotester": "^1.0.0"
+        "mole-rpc-autotester": "^1.0.0",
+        "typescript": "^3.8.3"
     },
     "scripts": {
-        "test": "node ./tests/autotests.js || exit 1"
+        "build": "tsc",
+        "test": "npm run build && node ./tests/autotests.js || exit 1"
     },
     "repository": {
         "type": "git",

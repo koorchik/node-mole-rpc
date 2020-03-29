@@ -1,9 +1,9 @@
 const AutoTester = require('mole-rpc-autotester');
 
-const MoleClient = require('../MoleClient');
-const MoleClientProxified = require('../MoleClientProxified');
-const MoleServer = require('../MoleServer');
-const X = require('../X');
+const MoleClient = require('../dist/MoleClient');
+const MoleClientProxified = require('../dist/MoleClientProxified');
+const MoleServer = require('../dist/MoleServer');
+const X = require('../dist/X');
 
 
 const TransportClient = require('./TransportClient');
