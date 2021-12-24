@@ -68,7 +68,7 @@ class MoleClient {
                 if (this.pendingRequest[id]) {
                     delete this.pendingRequest[id];
 
-                    reject(new X.RequestTimout());
+                    reject(new X.RequestTimeout());
                 }
             }, this.requestTimeout);
 

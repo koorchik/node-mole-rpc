@@ -255,7 +255,7 @@ List of available exception classes:
   * InternalError
   * ParseError
   * ServerError - custom server errors
-    * RequestTimout - Request exceeded maximum execution time
+    * RequestTimeout - Request exceeded maximum execution time
     * ExecutionError - Method has returned an error. 
 
 Every exception object has following properties:
@@ -300,7 +300,7 @@ async function main() {
   } catch (error) {
     if (error instanceof X.ExecutionError) {
       console.log('METHOD RETURNED ERROR', error.data);
-    } else if (error instanceof X.RequestTimout) {
+    } else if (error instanceof X.RequestTimeout) {
       console.log('METHOD EXCEEDED ALLOWED EXECUTION TIME');
     } else {
       throw error;
