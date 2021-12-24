@@ -41,6 +41,7 @@
     },
     "homepage": "https://github.com/koorchik/node-mole-rpc#readme",
     "contributors": [
-        "Vira Khuder <vira.khdr@gmail.com>"
+        "Vira Khuder <vira.khdr@gmail.com>",
+        "Artem Trush <atrush.main@gmail.com>"
     ]
 }

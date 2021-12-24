@@ -71,6 +71,7 @@ class RequestTimout extends ServerError {
     }
 }
 
+// For backward compatibility of RequestTimout class
 class RequestTimeout extends RequestTimout {
 
 }
@@ -94,7 +95,7 @@ module.exports = {
     InternalError,
     ServerError,
     ParseError,
-    RequestTimout,
+    RequestTimout, // For backward compatibility
     RequestTimeout,
     ExecutionError
 };
