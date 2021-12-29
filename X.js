@@ -62,13 +62,18 @@ class ServerError extends Base {
 
 }
 
-class RequestTimeout extends ServerError {
+class RequestTimout extends ServerError {
     constructor() {
         super({
             code: errorCodes.REQUEST_TIMEOUT,
             message: 'Request exceeded maximum execution time'
         });
     }
+}
+
+// For backward compatibility of RequestTimout class
+class RequestTimeout extends RequestTimout {
+
 }
 
 class ExecutionError extends ServerError {
@@ -90,6 +95,7 @@ module.exports = {
     InternalError,
     ServerError,
     ParseError,
+    RequestTimout, // For backward compatibility
     RequestTimeout,
     ExecutionError
 };
