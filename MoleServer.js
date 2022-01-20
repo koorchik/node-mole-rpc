@@ -69,7 +69,7 @@ class MoleServer {
             try {
                 const result = await this.methods[methodName].apply(this.methods, params);
 
-                if (!id) return; // For notifications do not respond. "" means send nothing
+                if (id !==0 && !id) return; // For notifications do not respond. "" means send nothing
 
                 return {
                     jsonrpc: '2.0',
