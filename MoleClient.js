@@ -80,7 +80,12 @@ class MoleClient {
     }
 
     _processResponse(data) {
-        const response = JSON.parse(data);
+        let response;
+        try {
+            response = JSON.parse(data);
+        } catch {
+            return;
+        }
 
         if (Array.isArray(response)) {
             this._processBatchResponse(response);

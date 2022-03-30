@@ -21,7 +21,12 @@ class MoleServer {
     }
 
     async _processRequest(transport, data) {
-        const requestData = JSON.parse(data);
+        let requestData
+        try{
+            requestData = JSON.parse(data);
+        } catch {
+            return;
+        }
 
         const isRequest = requestData.hasOwnProperty('method')
             || (Array.isArray(requestData)
