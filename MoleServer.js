@@ -1,15 +1,23 @@
+const { INTERNAL_METHODS } = require('./constants');
 const errorCodes = require('./errorCodes');
+
+const INTERNAL_METHODS_NAMES = Object.values(INTERNAL_METHODS);
 
 class MoleServer {
     constructor({ transports }) {
         if (!transports) throw new Error('TRANSPORT_REQUIRED');
 
         this.transportsToRegister = transports;
-        this.methods = {};
+        this.methods = {
+            [INTERNAL_METHODS.PING]: this._handlePing
+        };
     }
 
     expose(methods) {
-        this.methods = methods;
+        this.methods = {
+            ...methods,
+            [INTERNAL_METHODS.PING]: this._handlePing
+        };
     }
 
     async registerTransport(transport) {
@@ -47,14 +55,7 @@ class MoleServer {
     async _callMethod(request, transport) {
         const { method: methodName, params = [], id } = request;
 
-        const methodNotFound =
-            !this.methods[methodName] ||
-            typeof this.methods[methodName] !== 'function' ||
-            methodName === 'constructor' ||
-            methodName.startsWith('_') ||
-            this.methods[methodName] === Object.prototype[methodName];
-
-        if (methodNotFound) {
+        if (!this._isMethodExposed(methodName)) {
             return {
                 jsonrpc: '2.0',
                 id,
@@ -63,36 +64,50 @@ class MoleServer {
                     message: 'Method not found'
                 }
             };
-        } else {
-            this.currentTransport = transport;
-
-            try {
-                const result = await this.methods[methodName].apply(this.methods, params);
-
-                if (id !==0 && !id) return; // For notifications do not respond. "" means send nothing
-
-                return {
-                    jsonrpc: '2.0',
-                    id,
-                    result: typeof result === 'undefined' ? null : result
-                };
-            } catch (error) {
-                return {
-                    jsonrpc: '2.0',
-                    id,
-                    error: {
-                        code: errorCodes.EXECUTION_ERROR,
-                        message: 'Method has returned error',
-                        data: (error instanceof Error ? error.message : error)
-                    }
-                };
-            }
         }
+
+        this.currentTransport = transport;
+
+        try {
+            const result = await this.methods[methodName].apply(this.methods, params);
+
+            if (id !==0 && !id) return; // For notifications do not respond. "" means send nothing
+
+            return {
+                jsonrpc: '2.0',
+                id,
+                result: typeof result === 'undefined' ? null : result
+            };
+        } catch (error) {
+            return {
+                jsonrpc: '2.0',
+                id,
+                error: {
+                    code: errorCodes.EXECUTION_ERROR,
+                    message: 'Method has returned error',
+                    data: (error instanceof Error ? error.message : error)
+                }
+            };
+        }
+    }
+
+    _isMethodExposed(methodName) {
+        return (
+            this.methods[methodName] &&
+            typeof this.methods[methodName] === 'function' &&
+            methodName !== 'constructor' &&
+            (!methodName.startsWith('_') || INTERNAL_METHODS_NAMES.includes(methodName)) &&
+            this.methods[methodName] !== Object.prototype[methodName]
+        );
+    }
+
+    _handlePing() {
+        return 'pong';
     }
 
     async run() {
         for (const transport of this.transportsToRegister) {
-            this.registerTransport(transport);
+            await this.registerTransport(transport);
         }
 
         this.transportsToRegister = [];

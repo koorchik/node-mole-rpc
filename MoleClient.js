@@ -1,21 +1,59 @@
 const X = require('./X');
 const errorCodes = require('./errorCodes');
+const { INTERNAL_METHODS } = require('./constants');
 
 class MoleClient {
-    constructor({ transport, requestTimeout = 20000 }) {
+    constructor({
+        transport,
+        requestTimeout = 20000,
+        ping = false,
+        pingInterval = 10000,
+        pingTimeout = 1000
+    }) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
-        this.transport = transport;
+        if (pingInterval <= pingTimeout) throw new Error('Param pingInterval must be greater than pingTimeout');
 
+        this.transport = transport;
         this.requestTimeout = requestTimeout;
+        this.pingInterval = pingInterval;
+        this.pingTimeout = pingTimeout;
 
         this.pendingRequest = {};
         this.initialized = false;
+
+        if (ping) {
+            this._setupPingPong();
+        }
+    }
+
+    _setupPingPong() {
+        let serverAvailable = true;
+
+        const intervalId = setInterval(async () => {
+            try {
+                await this._ping();
+
+                if (!serverAvailable) {
+                    serverAvailable = true;
+                    console.log('CONNECTION RETURNED');
+                }
+            } catch (error) {
+                if (error instanceof X.MethodNotFound) {
+                    // In case if server doesn't support ping
+                    clearInterval(intervalId);
+                } else if (serverAvailable) {
+                    serverAvailable = false;
+                    console.log('CONNECTION LOST');
+                }
+            }
+        }, this.pingInterval);
     }
 
     async callMethod(method, params) {
         await this._init();
 
         const request = this._makeRequestObject({ method, params });
+
         return this._sendRequest({ object: request, id: request.id });
     }
 
@@ -23,8 +61,21 @@ class MoleClient {
         await this._init();
 
         const request = this._makeRequestObject({ method, params, mode: 'notify' });
+
         await this.transport.sendData(JSON.stringify(request));
+
         return true;
+    }
+
+    async _ping() {
+        await this._init();
+
+        const request = this._makeRequestObject({
+            method: INTERNAL_METHODS.PING,
+            params: [ 'ping' ]
+        });
+
+        return this._sendRequest({ object: request, id: request.id, timeout: this.pingTimeout });
     }
 
     async runBatch(calls) {
@@ -58,7 +109,7 @@ class MoleClient {
         this.initialized = true;
     }
 
-    _sendRequest({ object, id }) {
+    _sendRequest({ object, id, timeout = this.requestTimeout }) {
         const data = JSON.stringify(object);
 
         return new Promise((resolve, reject) => {
@@ -70,7 +121,7 @@ class MoleClient {
 
                     reject(new X.RequestTimeout());
                 }
-            }, this.requestTimeout);
+            }, timeout);
 
             return this.transport.sendData(data).catch(error => {
                 delete this.pendingRequest[id];
