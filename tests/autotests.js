@@ -5,11 +5,10 @@ const MoleClientProxified = require('../MoleClientProxified');
 const MoleServer = require('../MoleServer');
 const X = require('../X');
 
-
 const TransportClient = require('./TransportClient');
 const TransportServer = require('./TransportServer');
 
-const EventEmitter = require('events');
+const EventEmitter = require('../EventEmitter');
 
 async function main() {
     const emitter = new EventEmitter();

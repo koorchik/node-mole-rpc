@@ -3,6 +3,9 @@
 class EventEmitter {
     constructor() {
         this._listeners = {};
+
+        // Used for test purposes
+        this._paused = false;
     }
 
     on(eventName, listener) {
@@ -26,6 +29,10 @@ class EventEmitter {
     }
 
     emit(eventName, ...args) {
+        if (this._paused) {
+            return false;
+        }
+
         const listeners = this._listeners[eventName];
 
         if (!listeners) {
@@ -41,6 +48,14 @@ class EventEmitter {
         }
 
         return true;
+    }
+
+    pause() {
+        this._paused = true;
+    }
+
+    resume() {
+        this._paused = false;
     }
 }
 
