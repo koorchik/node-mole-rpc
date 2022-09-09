@@ -1,21 +1,34 @@
 function proxify(moleClient) {
+    const initProxy = proxifyOwnMethod(moleClient.init.bind(moleClient));
+    const shutdownProxy = proxifyOwnMethod(moleClient.shutdown.bind(moleClient));
     const callMethodProxy = proxifyOwnMethod(moleClient.callMethod.bind(moleClient));
     const notifyProxy = proxifyOwnMethod(moleClient.notify.bind(moleClient));
+    const onProxy = proxifyOwnMethod(moleClient.on.bind(moleClient));
+    const offProxy = proxifyOwnMethod(moleClient.off.bind(moleClient));
 
     return new Proxy(moleClient, {
         get(target, methodName) {
-            if (methodName === 'notify') {
-                return notifyProxy;
-            } else if (methodName === 'callMethod') {
-                return callMethodProxy;
-            } else if (methodName === 'options.requestTimeout') {
-                return target.requestTimeout;
-            } else if (methodName === 'then') {
-                // without this you will not be able to return client from an async function.
-                // V8 will see then method and will decide that client is a promise
-                return;
-            } else {
-                return (...params) => target.callMethod.call(target, methodName, params);
+            switch (methodName) {
+                case 'init':
+                    return initProxy;
+                case 'shutdown':
+                    return shutdownProxy;
+                case 'callMethod':
+                    return callMethodProxy;
+                case 'notify':
+                    return notifyProxy;
+                case 'on':
+                    return onProxy;
+                case 'off':
+                    return offProxy;
+                case 'options.requestTimeout':
+                    return target.requestTimeout;
+                case 'then':
+                    // without this you will not be able to return client from an async function.
+                    // V8 will see then method and will decide that client is a promise
+                    return;
+                default:
+                    return (...params) => target.callMethod.call(target, methodName, params);
             }
         }
     });

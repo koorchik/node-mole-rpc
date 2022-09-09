@@ -25,7 +25,21 @@ class MoleClient {
         this.eventEmitter = new EventEmitter();
 
         if (ping) {
-            this._setupPingPong();
+            this.pingIntervalId = this._setupPingPong();
+        }
+    }
+
+    async init() {
+        // It is not required to call this method manually,
+        // but it could be useful in case when we want to
+        // establish connection before callMethod
+        await this._init();
+    }
+
+    shutdown() {
+        if (this.pingIntervalId) {
+            clearInterval(this.pingIntervalId);
+            this.pingIntervalId = null;
         }
     }
 
@@ -118,6 +132,8 @@ class MoleClient {
                 }
             }
         }, this.pingInterval);
+
+        return intervalId;
     }
 
     _sendRequest({ object, id, timeout = this.requestTimeout }) {

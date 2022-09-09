@@ -25,6 +25,8 @@ async function main() {
     });
 
     await autoTester.runAllTests();
+
+    clients.proxifiedClient.shutdown();
 }
 
 async function prepareServer(emitter) {
@@ -60,7 +62,10 @@ async function prepareClients(emitter) {
             emitter,
             inTopic: 'toClient2',
             outTopic: 'fromClient2'
-        })
+        }),
+        ping: true,
+        pingInterval: 100,
+        pingTimeout: 10
     });
 
     return { simpleClient, proxifiedClient };
