@@ -1,6 +1,7 @@
 const X = require('./X');
+const EventEmitter = require('./EventEmitter');
 const errorCodes = require('./errorCodes');
-const { INTERNAL_METHODS } = require('./constants');
+const { INTERNAL_METHODS, CLIENT_EVENTS } = require('./constants');
 
 class MoleClient {
     constructor({
@@ -21,32 +22,19 @@ class MoleClient {
         this.pendingRequest = {};
         this.initialized = false;
 
+        this.eventEmitter = new EventEmitter();
+
         if (ping) {
             this._setupPingPong();
         }
     }
 
-    _setupPingPong() {
-        let serverAvailable = true;
+    on(eventName, listener) {
+        this.eventEmitter.on(eventName, listener);
+    }
 
-        const intervalId = setInterval(async () => {
-            try {
-                await this._ping();
-
-                if (!serverAvailable) {
-                    serverAvailable = true;
-                    console.log('CONNECTION RETURNED');
-                }
-            } catch (error) {
-                if (error instanceof X.MethodNotFound) {
-                    // In case if server doesn't support ping
-                    clearInterval(intervalId);
-                } else if (serverAvailable) {
-                    serverAvailable = false;
-                    console.log('CONNECTION LOST');
-                }
-            }
-        }, this.pingInterval);
+    off(eventName, listener) {
+        this.eventEmitter.off(eventName, listener);
     }
 
     async callMethod(method, params) {
@@ -107,6 +95,29 @@ class MoleClient {
         await this.transport.onData(this._processResponse.bind(this));
 
         this.initialized = true;
+    }
+
+    _setupPingPong() {
+        let serverAvailable = true;
+
+        const intervalId = setInterval(async () => {
+            try {
+                await this._ping();
+
+                if (!serverAvailable) {
+                    serverAvailable = true;
+                    this.eventEmitter.emit(CLIENT_EVENTS.SERVER_AVAILABLE);
+                }
+            } catch (error) {
+                if (error instanceof X.MethodNotFound) {
+                    // In case if server doesn't support ping
+                    clearInterval(intervalId);
+                } else if (serverAvailable) {
+                    serverAvailable = false;
+                    this.eventEmitter.emit(CLIENT_EVENTS.SERVER_UNAVAILABLE);
+                }
+            }
+        }, this.pingInterval);
     }
 
     _sendRequest({ object, id, timeout = this.requestTimeout }) {
@@ -261,5 +272,7 @@ class MoleClient {
         return id;
     }
 }
+
+MoleClient.EVENTS = CLIENT_EVENTS;
 
 module.exports = MoleClient;
