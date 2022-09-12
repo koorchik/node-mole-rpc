@@ -10,19 +10,25 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 ## Table of contents
 
--   [Features](#features)
--   [Motivation](#motivation)
--   [Basic usage](#basic-usage)
-    -   [Simple example with websocket transport](#simple-example-with-websocket-transport)
--   [API examples](#api-examples)
-    -   [Proxified Client](#proxified-client)
-    -   [Client (without Proxy support)](#client-without-proxy-support)
-    -   [Server (expose instance)](#server-expose-instance)
-    -   [Server (expose functions)](#server-expose-functions)
-    -   [Error Handling](#error-handling)
--   [Advanced usage](#advanced-usage)
--   [Use cases](#use-cases)
--   [How to create own transport?](#how-to-create-own-transport)
+- [Features](#features)
+- [Motivation](#motivation)
+- [Basic usage](#basic-usage)
+  - [Simple example with websocket transport](#simple-example-with-websocket-transport)
+- [API examples](#api-examples)
+  - [Proxified client](#proxified-client)
+  - [Client (without Proxy support)](#client-without-proxy-support)
+  - [Client (with enabled ping/pong mechanism)](#client-with-enabled-pingpong-mechanism)
+  - [Server (expose instance)](#server-expose-instance)
+  - [Server (expose functions)](#server-expose-functions)
+  - [Error Handling](#error-handling)
+- [Advanced usage](#advanced-usage)
+- [Use cases](#use-cases)
+  - [Case 1: Easy way to communicate with web-workers in your browser](#case-1-easy-way-to-communicate-with-web-workers-in-your-browser)
+  - [Case 2: Bypass firewall](#case-2-bypass-firewall)
+  - [Case 3: Microservices via message broker](#case-3-microservices-via-message-broker)
+  - [Case 4: Lightweight Inter process communication](#case-4-lightweight-inter-process-communication)
+  - [Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)](#case-5-multi-transport-mode-http-https-ws-the-same-time-for-example)
+- [How to create own transport?](#how-to-create-own-transport)
 
 ## Features
 
@@ -31,6 +37,7 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 -   **Works both in NodeJs and in a browser** (both client anf server). For example, you can use it to send request to webworker in your browser.
 -   **Bidirectional websocket connections support** via WS tranport. For example, you want a JSON RPC server which handles remote calls but the same time you want to send commands in opposite direction using the same connection.So, you can use connection initiated by any of the sides for the server and the client the same time.
 -   **Server can use several transports the same time**. For example, you want an RPC server that accepts connections from your local workers by TCP and from Web browser by websocket. You can pass as many transports as you wish.
+-   **Transport independent ping/pong mechanism**. You can monitor server availability and connection stability even if your transport doesn't support native ping/pong API.
 -   **Lightweight**
 -   **Modern API**. Totally based on Promises and supports Proxified interface
 -   **Supports all features of JSON-RPC 2.0** (batches, notifications etc)
@@ -38,7 +45,7 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 ## Motivation
 
-Yet another JSON-RPC library? Why do we need it? The reality, that there is no transport agnostic JSON-RPC library for nodejs. One of our projects required JSON RPC over MQTT and unfortunetely we were not able to find a good solution. 
+Yet another JSON-RPC library? Why do we need it? The reality, that there is no transport agnostic JSON-RPC library for nodejs. One of our projects required JSON RPC over MQTT and unfortunetely we were not able to find a good solution.
 
 **Key issues with existing libraries:**
 
@@ -52,7 +59,7 @@ Yet another JSON-RPC library? Why do we need it? The reality, that there is no t
 8. No promise based API.
 9. Everything is bundled to one large package with high level of coupling.
 10. Bugs, not tests.
-11. etc 
+11. etc
 
 Mole-RPC solves all of the issues described above.
 
@@ -60,7 +67,7 @@ Mole-RPC solves all of the issues described above.
 
 This module is transport agnostics. So, [you can choose any transport you need](https://www.npmjs.com/search?q=keywords:mole-transport)
 
-### Simple example with websocket transport 
+### Simple example with websocket transport
 
 In this example, we use WebSocketServer for RPC server but you you can use simple WS server transport as well. This can be useful for the case when server connects to client (you can bypass firefall in this way).
 
@@ -72,11 +79,11 @@ const WebSocket = require('ws');
 const WSS_PORT = 12345;
 
 function sum(a, b) { return a + b }
-function multiply(a, b) { return a * b } 
+function multiply(a, b) { return a * b }
 
 async function main() {
-  const server = new MoleServer({ 
-    transports: prepareTransports() 
+  const server = new MoleServer({
+    transports: prepareTransports()
   });
 
   server.expose({ sum, multiply });
@@ -86,8 +93,8 @@ async function main() {
 function prepareTransports() {
   return [
     new TransportServerWSS({
-      wss: new WebSocket.Server({ 
-        port: WSS_PORT 
+      wss: new WebSocket.Server({
+        port: WSS_PORT
       })
     })
   ];
@@ -173,6 +180,36 @@ const result2 = await client.callMethod('sum', [2, 3]);
 await client.notify('sum', [2, 3]);
 ```
 
+### Client (with enabled ping/pong mechanism)
+
+```javascript
+import MoleClient from 'mole-rpc/MoleClient';
+
+// choose any transports here
+// https://www.npmjs.com/search?q=keywords:mole-transport
+const transport = new TransportClient();
+const client = new MoleClient({ transport, ping: true });
+
+client.on(MoleClient.EVENTS.SERVER_UNAVAILABLE, () => {
+    console.log('We have lost connection to the server!');
+});
+
+client.on(MoleClient.EVENTS.SERVER_AVAILABLE, () => {
+    console.log('We have restored connection to the server!');
+});
+
+const result1 = await client.callMethod('sum', [1, 3]);
+const result2 = await client.callMethod('sum', [2, 3]);
+
+// Send JSON RPC notification (fire and forget)
+// server will send no response
+await client.notify('sum', [2, 3]);
+
+// In case when ping/pong enabled,
+// we should manually shutdown the client if we don't need it anymore
+client.shutdown();
+```
+
 ### Server (expose instance)
 
 You can expose instance directly.
@@ -256,13 +293,13 @@ List of available exception classes:
   * ParseError
   * ServerError - custom server errors
     * RequestTimeout - Request exceeded maximum execution time
-    * ExecutionError - Method has returned an error. 
+    * ExecutionError - Method has returned an error.
 
 Every exception object has following properties:
 
 1. "code" - numeric code from the spec
 2. "message" - human readable message.
-3. "data" - additional data. Used only by ExecutionError, contains error returned by method 
+3. "data" - additional data. Used only by ExecutionError, contains error returned by method
 
 **How to return an error from method?**
 
@@ -273,8 +310,8 @@ Nothing special required. Just reject promise or throw an exception.
 function divide(a, b) {
   if (b == 0) throw "devision by zero";
   // throw 'new Error("devision by zero")' will behave the same
-  return a / b; 
-} 
+  return a / b;
+}
 
 function loadUser(userId) {
   ...
@@ -293,7 +330,7 @@ Nothing special. Just catch the exception.
 const X = require('mole-rpc/X');
 
 async function main() {
-  ... 
+  ...
 
   try {
       await client.divide(2, 3);
@@ -304,7 +341,7 @@ async function main() {
       console.log('METHOD EXCEEDED ALLOWED EXECUTION TIME');
     } else {
       throw error;
-    } 
+    }
   }
 }
 ```
@@ -359,16 +396,16 @@ const results = await client.runBatch([
 
 To communicate with web worker, in most cases, you will try to simulate JSON RPC having "id", "method", "params" in each request and "id", "result" in each response.
 
-With Mole RCP there is no need to use custom hacks. Just use [mole-rpc-transport-webworker](https://www.npmjs.com/package/mole-rpc-transport-webworker). 
+With Mole RCP there is no need to use custom hacks. Just use [mole-rpc-transport-webworker](https://www.npmjs.com/package/mole-rpc-transport-webworker).
 
 
 ### Case 2: Bypass firewall
 
 You have a device (or service) in local network and want to manage it. You cannot get to it from Internet, as the device is hidden behind NAT. But your device can connect to your internet server. So, with Mole RPC your device (RPC Server) can connect to the your internet server (RPC Client) and after that the internet server will be able to call methods on the devices hidden behind NAT.
 
-Here is an example  - https://github.com/koorchik/node-mole-rpc-transport-ws/tree/master/examples/server-connects-to-client 
+Here is an example  - https://github.com/koorchik/node-mole-rpc-transport-ws/tree/master/examples/server-connects-to-client
 
-This case is rather hard to implement with other JSON RPC modules but with Mole RPC it works by design. 
+This case is rather hard to implement with other JSON RPC modules but with Mole RPC it works by design.
 
 
 ### Case 3: Microservices via message broker
@@ -379,7 +416,7 @@ See, [mole-rpc-transport-mqtt](https://www.npmjs.com/package/mole-rpc-transport-
 
 ### Case 4: Lightweight Inter process communication
 
-Websocket is a good options for it. With websocker transport you can connect browser to server and the same time it suitable for connecting to server processes. It is not only option, you not limited to use any transport you wish. 
+Websocket is a good options for it. With websocker transport you can connect browser to server and the same time it suitable for connecting to server processes. It is not only option, you not limited to use any transport you wish.
 
 ### Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)
 
@@ -389,6 +426,6 @@ You can pass multiple transports to MoleServer. This transport can be of differe
 
 Transports have simple API as possible, so it is very easy to add a new transport. MoleRPC has strong separation between protocol handler and transports. Transports know nothing about what is inside payload. Therefore, they are very simple. Usually, is is just two classes with 1-2 methods.
 
-The best way to start is just to look at source code of existing implemenations - https://www.npmjs.com/search?q=keywords:mole-transport 
+The best way to start is just to look at source code of existing implemenations - https://www.npmjs.com/search?q=keywords:mole-transport
 
 Moreover, we have created an [AutoTester](https://www.npmjs.com/package/mole-rpc-autotester) for transports. Use [AutoTester](https://www.npmjs.com/package/mole-rpc-autotester) to cover 95% of cases and just add several tests to cover transport specific logic like reconnections etc.
