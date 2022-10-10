@@ -14,7 +14,7 @@
         "mole-rpc-autotester": "^1.0.0"
     },
     "scripts": {
-        "test": "(node ./tests/autotests.js && node ./tests/pingpongtests.js) || exit 1"
+        "test": "node ./tests/autotests.js || exit 1"
     },
     "repository": {
         "type": "git",

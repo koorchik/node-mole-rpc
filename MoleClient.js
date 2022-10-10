@@ -5,7 +5,6 @@ const { INTERNAL_METHODS } = require('./constants');
 class MoleClient {
     constructor({ transport, requestTimeout = 20000, pingTimeout = 1000 }) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
-        if (pingInterval <= pingTimeout) throw new Error('Param pingInterval must be greater than pingTimeout');
 
         this.transport = transport;
         this.requestTimeout = requestTimeout;

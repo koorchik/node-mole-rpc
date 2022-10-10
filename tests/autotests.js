@@ -8,7 +8,7 @@ const X = require('../X');
 const TransportClient = require('./TransportClient');
 const TransportServer = require('./TransportServer');
 
-const EventEmitter = require('EventEmitter');
+const EventEmitter = require('events');
 
 async function main() {
     const emitter = new EventEmitter();
@@ -24,8 +24,6 @@ async function main() {
     });
 
     await autoTester.runAllTests();
-
-    clients.proxifiedClient.shutdown();
 }
 
 async function prepareServer(emitter) {
