@@ -8,7 +8,7 @@ const X = require('../X');
 const TransportClient = require('./TransportClient');
 const TransportServer = require('./TransportServer');
 
-const EventEmitter = require('../EventEmitter');
+const EventEmitter = require('EventEmitter');
 
 async function main() {
     const emitter = new EventEmitter();
@@ -61,10 +61,7 @@ async function prepareClients(emitter) {
             emitter,
             inTopic: 'toClient2',
             outTopic: 'fromClient2'
-        }),
-        ping: true,
-        pingInterval: 100,
-        pingTimeout: 10
+        })
     });
 
     return { simpleClient, proxifiedClient };

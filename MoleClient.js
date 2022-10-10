@@ -1,32 +1,18 @@
 const X = require('./X');
-const EventEmitter = require('./EventEmitter');
 const errorCodes = require('./errorCodes');
-const { INTERNAL_METHODS, CLIENT_EVENTS } = require('./constants');
+const { INTERNAL_METHODS } = require('./constants');
 
 class MoleClient {
-    constructor({
-        transport,
-        requestTimeout = 20000,
-        ping = false,
-        pingInterval = 10000,
-        pingTimeout = 1000
-    }) {
+    constructor({ transport, requestTimeout = 20000, pingTimeout = 1000 }) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
         if (pingInterval <= pingTimeout) throw new Error('Param pingInterval must be greater than pingTimeout');
 
         this.transport = transport;
         this.requestTimeout = requestTimeout;
-        this.pingInterval = pingInterval;
         this.pingTimeout = pingTimeout;
 
         this.pendingRequest = {};
         this.initialized = false;
-
-        this.eventEmitter = new EventEmitter();
-
-        if (ping) {
-            this.pingIntervalId = this._setupPingPong();
-        }
     }
 
     async init() {
@@ -34,21 +20,6 @@ class MoleClient {
         // but it could be useful in case when we want to
         // establish connection before callMethod
         await this._init();
-    }
-
-    shutdown() {
-        if (this.pingIntervalId) {
-            clearInterval(this.pingIntervalId);
-            this.pingIntervalId = null;
-        }
-    }
-
-    on(eventName, listener) {
-        this.eventEmitter.on(eventName, listener);
-    }
-
-    off(eventName, listener) {
-        this.eventEmitter.off(eventName, listener);
     }
 
     async callMethod(method, params) {
@@ -69,7 +40,7 @@ class MoleClient {
         return true;
     }
 
-    async _ping() {
+    async ping() {
         await this._init();
 
         const request = this._makeRequestObject({
@@ -109,31 +80,6 @@ class MoleClient {
         await this.transport.onData(this._processResponse.bind(this));
 
         this.initialized = true;
-    }
-
-    _setupPingPong() {
-        let serverAvailable = true;
-
-        const intervalId = setInterval(async () => {
-            try {
-                await this._ping();
-
-                if (!serverAvailable) {
-                    serverAvailable = true;
-                    this.eventEmitter.emit(CLIENT_EVENTS.SERVER_AVAILABLE);
-                }
-            } catch (error) {
-                if (error instanceof X.MethodNotFound) {
-                    // In case if server doesn't support ping
-                    clearInterval(intervalId);
-                } else if (serverAvailable) {
-                    serverAvailable = false;
-                    this.eventEmitter.emit(CLIENT_EVENTS.SERVER_UNAVAILABLE);
-                }
-            }
-        }, this.pingInterval);
-
-        return intervalId;
     }
 
     _sendRequest({ object, id, timeout = this.requestTimeout }) {
@@ -288,7 +234,5 @@ class MoleClient {
         return id;
     }
 }
-
-MoleClient.EVENTS = CLIENT_EVENTS;
 
 module.exports = MoleClient;
