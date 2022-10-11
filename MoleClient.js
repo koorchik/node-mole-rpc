@@ -47,7 +47,17 @@ class MoleClient {
             params: [ 'ping' ]
         });
 
-        return this._sendRequest({ object: request, id: request.id, timeout: this.pingTimeout });
+        try {
+            await this._sendRequest({ object: request, id: request.id, timeout: this.pingTimeout });
+        } catch (error) {
+            if (error instanceof X.MethodNotFound) {
+                error.message = 'Ping method not found. Update your mole-rpc server';
+            }
+
+            throw error;
+        }
+
+        return true;
     }
 
     async runBatch(calls) {
