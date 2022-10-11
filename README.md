@@ -10,25 +10,25 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 ## Table of contents
 
-- [Features](#features)
-- [Motivation](#motivation)
-- [Basic usage](#basic-usage)
-  - [Simple example with websocket transport](#simple-example-with-websocket-transport)
-- [API examples](#api-examples)
-  - [Proxified client](#proxified-client)
-  - [Client (without Proxy support)](#client-without-proxy-support)
-  - [Client (with enabled ping/pong mechanism)](#client-with-enabled-pingpong-mechanism)
-  - [Server (expose instance)](#server-expose-instance)
-  - [Server (expose functions)](#server-expose-functions)
-  - [Error Handling](#error-handling)
-- [Advanced usage](#advanced-usage)
-- [Use cases](#use-cases)
-  - [Case 1: Easy way to communicate with web-workers in your browser](#case-1-easy-way-to-communicate-with-web-workers-in-your-browser)
-  - [Case 2: Bypass firewall](#case-2-bypass-firewall)
-  - [Case 3: Microservices via message broker](#case-3-microservices-via-message-broker)
-  - [Case 4: Lightweight Inter process communication](#case-4-lightweight-inter-process-communication)
-  - [Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)](#case-5-multi-transport-mode-http-https-ws-the-same-time-for-example)
-- [How to create own transport?](#how-to-create-own-transport)
+  - [Features](#features)
+  - [Motivation](#motivation)
+  - [Basic usage](#basic-usage)
+    - [Simple example with websocket transport](#simple-example-with-websocket-transport)
+  - [API examples](#api-examples)
+    - [Proxified client](#proxified-client)
+    - [Client (without Proxy support)](#client-without-proxy-support)
+    - [Client (ping server)](#client-ping-server)
+    - [Server (expose instance)](#server-expose-instance)
+    - [Server (expose functions)](#server-expose-functions)
+    - [Error Handling](#error-handling)
+  - [Advanced usage](#advanced-usage)
+  - [Use cases](#use-cases)
+    - [Case 1: Easy way to communicate with web-workers in your browser](#case-1-easy-way-to-communicate-with-web-workers-in-your-browser)
+    - [Case 2: Bypass firewall](#case-2-bypass-firewall)
+    - [Case 3: Microservices via message broker](#case-3-microservices-via-message-broker)
+    - [Case 4: Lightweight Inter process communication](#case-4-lightweight-inter-process-communication)
+    - [Case 5: Multi transport mode (HTTP, HTTPS, WS the same time, for example)](#case-5-multi-transport-mode-http-https-ws-the-same-time-for-example)
+  - [How to create own transport?](#how-to-create-own-transport)
 
 ## Features
 
@@ -37,7 +37,7 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 -   **Works both in NodeJs and in a browser** (both client anf server). For example, you can use it to send request to webworker in your browser.
 -   **Bidirectional websocket connections support** via WS tranport. For example, you want a JSON RPC server which handles remote calls but the same time you want to send commands in opposite direction using the same connection.So, you can use connection initiated by any of the sides for the server and the client the same time.
 -   **Server can use several transports the same time**. For example, you want an RPC server that accepts connections from your local workers by TCP and from Web browser by websocket. You can pass as many transports as you wish.
--   **Transport independent ping/pong mechanism**. You can monitor server availability and connection stability even if your transport doesn't support native ping/pong API.
+-   **Transport independent ping/pong mechanism**. You can check server availability and connection stability even if your transport doesn't support native ping/pong API.
 -   **Lightweight**
 -   **Modern API**. Totally based on Promises and supports Proxified interface
 -   **Supports all features of JSON-RPC 2.0** (batches, notifications etc)
@@ -180,34 +180,28 @@ const result2 = await client.callMethod('sum', [2, 3]);
 await client.notify('sum', [2, 3]);
 ```
 
-### Client (with enabled ping/pong mechanism)
+### Client (ping server)
 
 ```javascript
-import MoleClient from 'mole-rpc/MoleClient';
+const MoleClient = require('mole-rpc/MoleClient');
+const X = require('mole-rpc/X');
 
 // choose any transports here
 // https://www.npmjs.com/search?q=keywords:mole-transport
 const transport = new TransportClient();
-const client = new MoleClient({ transport, ping: true });
+const client = new MoleClient({ transport });
 
-client.on(MoleClient.EVENTS.SERVER_UNAVAILABLE, () => {
-    console.log('We have lost connection to the server!');
-});
-
-client.on(MoleClient.EVENTS.SERVER_AVAILABLE, () => {
-    console.log('We have restored connection to the server!');
-});
-
-const result1 = await client.callMethod('sum', [1, 3]);
-const result2 = await client.callMethod('sum', [2, 3]);
-
-// Send JSON RPC notification (fire and forget)
-// server will send no response
-await client.notify('sum', [2, 3]);
-
-// In case when ping/pong enabled,
-// we should manually shutdown the client if we don't need it anymore
-client.shutdown();
+try {
+    await client.ping();
+} catch (error) {
+    if (error instanceof X.RequestTimeout) {
+        console.log('Ping failed. Server is unavailable');
+    } else if (error instanceof X.MethodNotFound) {
+        console.log('Ping method not found. Update your mole-rpc server');
+    } else {
+        throw error;
+    }
+}
 ```
 
 ### Server (expose instance)
@@ -292,8 +286,8 @@ List of available exception classes:
   * InternalError
   * ParseError
   * ServerError - custom server errors
-    * RequestTimeout - Request exceeded maximum execution time
-    * ExecutionError - Method has returned an error.
+  * RequestTimeout - Request exceeded maximum execution time
+  * ExecutionError - Method has returned an error.
 
 Every exception object has following properties:
 
