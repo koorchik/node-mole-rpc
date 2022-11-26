@@ -5,7 +5,6 @@ const MoleClientProxified = require('../MoleClientProxified');
 const MoleServer = require('../MoleServer');
 const X = require('../X');
 
-
 const TransportClient = require('./TransportClient');
 const TransportServer = require('./TransportServer');
 

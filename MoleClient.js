@@ -1,21 +1,31 @@
 const X = require('./X');
 const errorCodes = require('./errorCodes');
+const { INTERNAL_METHODS } = require('./constants');
 
 class MoleClient {
-    constructor({ transport, requestTimeout = 20000 }) {
+    constructor({ transport, requestTimeout = 20000, pingTimeout = 1000 }) {
         if (!transport) throw new Error('TRANSPORT_REQUIRED');
-        this.transport = transport;
 
+        this.transport = transport;
         this.requestTimeout = requestTimeout;
+        this.pingTimeout = pingTimeout;
 
         this.pendingRequest = {};
         this.initialized = false;
+    }
+
+    async init() {
+        // It is not required to call this method manually,
+        // but it could be useful in case when we want to
+        // establish connection before callMethod
+        await this._init();
     }
 
     async callMethod(method, params) {
         await this._init();
 
         const request = this._makeRequestObject({ method, params });
+
         return this._sendRequest({ object: request, id: request.id });
     }
 
@@ -23,7 +33,30 @@ class MoleClient {
         await this._init();
 
         const request = this._makeRequestObject({ method, params, mode: 'notify' });
+
         await this.transport.sendData(JSON.stringify(request));
+
+        return true;
+    }
+
+    async ping() {
+        await this._init();
+
+        const request = this._makeRequestObject({
+            method: INTERNAL_METHODS.PING,
+            params: [ 'ping' ]
+        });
+
+        try {
+            await this._sendRequest({ object: request, id: request.id, timeout: this.pingTimeout });
+        } catch (error) {
+            if (error instanceof X.MethodNotFound) {
+                error.message = 'Ping method not found. Update your mole-rpc server';
+            }
+
+            throw error;
+        }
+
         return true;
     }
 
@@ -58,7 +91,7 @@ class MoleClient {
         this.initialized = true;
     }
 
-    _sendRequest({ object, id }) {
+    _sendRequest({ object, id, timeout = this.requestTimeout }) {
         const data = JSON.stringify(object);
 
         return new Promise((resolve, reject) => {
@@ -70,7 +103,7 @@ class MoleClient {
 
                     reject(new X.RequestTimeout());
                 }
-            }, this.requestTimeout);
+            }, timeout);
 
             return this.transport.sendData(data).catch(error => {
                 delete this.pendingRequest[id];
