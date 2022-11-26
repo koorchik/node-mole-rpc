@@ -147,6 +147,13 @@ class MoleClient {
         const errorsWithoutId = [];
 
         for (const response of responses) {
+            if (response && response.method) {
+                // Some transport reuse the same mediator to pass data in both directions
+                // So, it can happen that just sent request will captured by the client
+                // as respone.  So, we ignore such cases.
+                return;
+            }
+
             if (response.id) {
                 if (!batchId) {
                     batchId = response.id.split('|')[0];
