@@ -213,7 +213,7 @@ class MoleClient {
             method
         };
 
-        if (params && params.length) {
+        if (typeof params === "object") {
             request.params = params;
         }
 
