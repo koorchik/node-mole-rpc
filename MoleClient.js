@@ -21,12 +21,12 @@ class MoleClient {
         await this._init();
     }
 
-    async callMethod(method, params) {
+    async callMethod(method, params, options = {}) {
         await this._init();
 
         const request = this._makeRequestObject({ method, params });
 
-        return this._sendRequest({ object: request, id: request.id });
+        return this._sendRequest({ object: request, id: request.id, timeout: options.timeout || this.requestTimeout });
     }
 
     async notify(method, params) {
