@@ -91,6 +91,8 @@ class MoleServer {
     }
 
     _parseIncomingRequest(requestString) {
+        let requestData;
+
         try {
             requestData = JSON.parse(requestString);
         } catch (error) {
