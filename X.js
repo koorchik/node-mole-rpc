@@ -31,10 +31,10 @@ class InvalidParams extends Base {
 }
 
 class InternalError extends Base {
-    constructor({ data = null } = {}) {
+    constructor({ message = 'Internal error', data = null } = {}) {
         super({
             code: errorCodes.INTERNAL_ERROR,
-            message: 'Internal error'
+            message
         });
 
         this.data = data;

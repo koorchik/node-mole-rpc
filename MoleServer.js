@@ -48,6 +48,10 @@ class MoleServer {
             responseData = await this._callMethod(requestData, transport);
         }
 
+        if (!responseData) {
+            return;
+        }
+
         return this._makeResponseString(responseData);
     }
 
@@ -123,7 +127,7 @@ class MoleServer {
                 jsonrpc: '2.0',
                 error: {
                     code: errorCodes.INTERNAL_ERROR,
-                    message: 'Internal error',
+                    message: 'Response exceeded max packet size',
                     data: { maxPacketSize: this.maxPacketSizeInBytes }
                 }
             };

@@ -232,8 +232,8 @@ class MoleClient {
             [errorCodes.EXECUTION_ERROR]: ({ data }) => {
                 return new X.ExecutionError({ data });
             },
-            [errorCodes.INTERNAL_ERROR]: ({ data }) => {
-                return new X.InternalError({ data });
+            [errorCodes.INTERNAL_ERROR]: ({ message, data }) => {
+                return new X.InternalError({ message, data });
             }
         }[errorData.code];
 
