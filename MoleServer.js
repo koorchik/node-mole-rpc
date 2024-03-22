@@ -4,10 +4,12 @@ const errorCodes = require('./errorCodes');
 const INTERNAL_METHODS_NAMES = Object.values(INTERNAL_METHODS);
 
 class MoleServer {
-    constructor({ transports }) {
+    constructor({ transports, maxPacketSize }) {
         if (!transports) throw new Error('TRANSPORT_REQUIRED');
 
         this.transportsToRegister = transports;
+        this.maxPacketSizeInBytes = maxPacketSize;
+
         this.methods = {
             [INTERNAL_METHODS.PING]: this._handlePing
         };
@@ -29,21 +31,11 @@ class MoleServer {
     }
 
     async _processRequest(transport, data) {
-        let requestData;
+        const requestData = this._parseIncomingRequest(data);
 
-        try {
-            requestData = JSON.parse(data);
-        } catch (error) {
-            // Handle cases when server receives broken JSON
+        if (!requestData) {
             return;
         }
-
-        const isRequest = requestData.hasOwnProperty('method')
-            || (Array.isArray(requestData)
-                && requestData[0]
-                && requestData[0].hasOwnProperty('method'));
-
-        if (!isRequest) return;
 
         let responseData;
 
@@ -56,7 +48,7 @@ class MoleServer {
             responseData = await this._callMethod(requestData, transport);
         }
 
-        return JSON.stringify(responseData);
+        return this._makeResponseString(responseData);
     }
 
     async _callMethod(request, transport) {
@@ -78,7 +70,7 @@ class MoleServer {
         try {
             const result = await this.methods[methodName].apply(this.methods, params);
 
-            if (id !==0 && !id) return; // For notifications do not respond. "" means send nothing
+            if (id !== 0 && !id) return; // For notifications do not respond. "" means send nothing
 
             return {
                 jsonrpc: '2.0',
@@ -96,6 +88,54 @@ class MoleServer {
                 }
             };
         }
+    }
+
+    _parseIncomingRequest(requestString) {
+        try {
+            requestData = JSON.parse(requestString);
+        } catch (error) {
+            // Handle cases when server receives broken JSON
+            return null;
+        }
+
+        const isMoleRequest = (
+            requestData.hasOwnProperty('method') || (
+                Array.isArray(requestData) &&
+                requestData[0] &&
+                requestData[0].hasOwnProperty('method')
+            )
+        );
+
+        if (!isMoleRequest) {
+            return null;
+        }
+
+        return requestData;
+    }
+
+    _makeResponseString(responseData) {
+        let responseString = JSON.stringify(responseData);
+
+        if (this.maxPacketSizeInBytes && responseString.length > this.maxPacketSizeInBytes) {
+            const internalError = {
+                jsonrpc: '2.0',
+                error: {
+                    code: errorCodes.INTERNAL_ERROR,
+                    message: 'Internal error',
+                    data: { maxPacketSize: this.maxPacketSizeInBytes }
+                }
+            };
+
+            if (Array.isArray(responseData)) {
+                responseString = JSON.stringify(responseData.map(item => {
+                    return { id: item.id, ...internalError };
+                }));
+            } else {
+                responseString = JSON.stringify({ id: responseData.id, ...internalError });
+            }
+        }
+
+        return responseString;
     }
 
     _isMethodExposed(methodName) {
