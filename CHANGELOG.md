@@ -9,4 +9,4 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - options parameter for `MoleClient.callMethod` to pass `timeout` to it
 - options parameter for `MoleClient.runBatch` to pass `timeout` to it
 - `maxPacketSize` parameter for `MoleServer` to produce `InternalError` on max response size exceeding
-
+- `index.js` file to export components
