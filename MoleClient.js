@@ -21,12 +21,12 @@ class MoleClient {
         await this._init();
     }
 
-    async callMethod(method, params) {
+    async callMethod(method, params, options = {}) {
         await this._init();
 
         const request = this._makeRequestObject({ method, params });
 
-        return this._sendRequest({ object: request, id: request.id });
+        return this._sendRequest({ object: request, id: request.id, timeout: options.timeout });
     }
 
     async notify(method, params) {
@@ -60,7 +60,7 @@ class MoleClient {
         return true;
     }
 
-    async runBatch(calls) {
+    async runBatch(calls, options = {}) {
         const batchId = this._generateId();
         let onlyNotifications = true;
 
@@ -79,7 +79,7 @@ class MoleClient {
         if (onlyNotifications) {
             return this.transport.sendData(JSON.stringify(batchRequest));
         } else {
-            return this._sendRequest({ object: batchRequest, id: batchId });
+            return this._sendRequest({ object: batchRequest, id: batchId, timeout: options.timeout });
         }
     }
 
@@ -231,6 +231,9 @@ class MoleClient {
             },
             [errorCodes.EXECUTION_ERROR]: ({ data }) => {
                 return new X.ExecutionError({ data });
+            },
+            [errorCodes.INTERNAL_ERROR]: ({ message, data }) => {
+                return new X.InternalError({ message, data });
             }
         }[errorData.code];
 

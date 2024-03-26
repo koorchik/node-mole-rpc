@@ -10,6 +10,8 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 ## Table of contents
 
+- [mole-rpc](#mole-rpc)
+  - [Table of contents](#table-of-contents)
   - [Features](#features)
   - [Motivation](#motivation)
   - [Basic usage](#basic-usage)
@@ -333,6 +335,8 @@ async function main() {
       console.log('METHOD RETURNED ERROR', error.data);
     } else if (error instanceof X.RequestTimeout) {
       console.log('METHOD EXCEEDED ALLOWED EXECUTION TIME');
+    } else if (error instanceof X.InternalError) {
+      console.log('METHOD FAILED WITH INTERNAL ERROR', error.message, error.data);
     } else {
       throw error;
     }
