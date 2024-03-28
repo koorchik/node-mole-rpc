@@ -24,6 +24,10 @@ async function main() {
     });
 
     await autoTester.runAllTests();
+
+    await clients.simpleClient.shutdown();
+    await clients.proxifiedClient.shutdown();
+    await server.shutdown();
 }
 
 async function prepareServer(emitter) {

@@ -4,10 +4,14 @@ const errorCodes = require('./errorCodes');
 const INTERNAL_METHODS_NAMES = Object.values(INTERNAL_METHODS);
 
 class MoleServer {
-    constructor({ transports }) {
+    constructor({ transports, maxPacketSize }) {
         if (!transports) throw new Error('TRANSPORT_REQUIRED');
 
         this.transportsToRegister = transports;
+        this.transportsMap = new Map();
+
+        this.maxPacketSizeInBytes = maxPacketSize;
+
         this.methods = {
             [INTERNAL_METHODS.PING]: this._handlePing
         };
@@ -20,30 +24,44 @@ class MoleServer {
         };
     }
 
+    async run() {
+        const promises = this.transportsToRegister.map(this.registerTransport.bind(this));
+
+        this.transportsToRegister = [];
+
+        await Promise.all(promises);
+    }
+
+    async shutdown() {
+        const promises = [];
+
+        for (const transport of this.transportsMap.keys()) {
+            promises.push(this.removeTransport(transport));
+        }
+
+        await Promise.all(promises);
+    }
+
     async registerTransport(transport) {
         await transport.onData(this._processRequest.bind(this, transport));
+
+        this.transportsMap.set(transport, true);
     }
 
     async removeTransport(transport) {
-        await transport.shutdown(); // TODO
+        this.transportsMap.delete(transport);
+
+        if (typeof transport.shutdown === 'function') {
+            await transport.shutdown();
+        }
     }
 
     async _processRequest(transport, data) {
-        let requestData;
+        const requestData = this._parseIncomingRequest(data);
 
-        try {
-            requestData = JSON.parse(data);
-        } catch (error) {
-            // Handle cases when server receives broken JSON
+        if (!requestData) {
             return;
         }
-
-        const isRequest = requestData.hasOwnProperty('method')
-            || (Array.isArray(requestData)
-                && requestData[0]
-                && requestData[0].hasOwnProperty('method'));
-
-        if (!isRequest) return;
 
         let responseData;
 
@@ -56,7 +74,11 @@ class MoleServer {
             responseData = await this._callMethod(requestData, transport);
         }
 
-        return JSON.stringify(responseData);
+        if (!responseData) {
+            return;
+        }
+
+        return this._makeResponseString(responseData);
     }
 
     async _callMethod(request, transport) {
@@ -78,7 +100,7 @@ class MoleServer {
         try {
             const result = await this.methods[methodName].apply(this.methods, params);
 
-            if (id !==0 && !id) return; // For notifications do not respond. "" means send nothing
+            if (id !== 0 && !id) return; // For notifications do not respond. "" means send nothing
 
             return {
                 jsonrpc: '2.0',
@@ -98,6 +120,56 @@ class MoleServer {
         }
     }
 
+    _parseIncomingRequest(requestString) {
+        let requestData;
+
+        try {
+            requestData = JSON.parse(requestString);
+        } catch (error) {
+            // Handle cases when server receives broken JSON
+            return null;
+        }
+
+        const isMoleRequest = (
+            requestData.hasOwnProperty('method') || (
+                Array.isArray(requestData) &&
+                requestData[0] &&
+                requestData[0].hasOwnProperty('method')
+            )
+        );
+
+        if (!isMoleRequest) {
+            return null;
+        }
+
+        return requestData;
+    }
+
+    _makeResponseString(responseData) {
+        let responseString = JSON.stringify(responseData);
+
+        if (this.maxPacketSizeInBytes && responseString.length > this.maxPacketSizeInBytes) {
+            const internalError = {
+                jsonrpc: '2.0',
+                error: {
+                    code: errorCodes.INTERNAL_ERROR,
+                    message: 'Response exceeded max packet size',
+                    data: { maxPacketSize: this.maxPacketSizeInBytes }
+                }
+            };
+
+            if (Array.isArray(responseData)) {
+                responseString = JSON.stringify(responseData.map(item => {
+                    return { id: item.id, ...internalError };
+                }));
+            } else {
+                responseString = JSON.stringify({ id: responseData.id, ...internalError });
+            }
+        }
+
+        return responseString;
+    }
+
     _isMethodExposed(methodName) {
         return (
             this.methods[methodName] &&
@@ -110,14 +182,6 @@ class MoleServer {
 
     _handlePing() {
         return 'pong';
-    }
-
-    async run() {
-        for (const transport of this.transportsToRegister) {
-            await this.registerTransport(transport);
-        }
-
-        this.transportsToRegister = [];
     }
 }
 
