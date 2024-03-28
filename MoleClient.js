@@ -21,6 +21,22 @@ class MoleClient {
         await this._init();
     }
 
+    async _init() {
+        if (this.initialized) return;
+
+        await this.transport.onData(this._processResponse.bind(this));
+
+        this.initialized = true;
+    }
+
+    async shutdown() {
+        if (!this.initialized) return;
+
+        if (typeof this.transport.shutdown === 'function') {
+            await this.transport.shutdown();
+        }
+    }
+
     async callMethod(method, params, options = {}) {
         await this._init();
 
@@ -81,14 +97,6 @@ class MoleClient {
         } else {
             return this._sendRequest({ object: batchRequest, id: batchId, timeout: options.timeout });
         }
-    }
-
-    async _init() {
-        if (this.initialized) return;
-
-        await this.transport.onData(this._processResponse.bind(this));
-
-        this.initialized = true;
     }
 
     _sendRequest({ object, id, timeout = this.requestTimeout }) {

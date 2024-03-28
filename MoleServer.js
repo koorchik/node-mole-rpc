@@ -8,6 +8,8 @@ class MoleServer {
         if (!transports) throw new Error('TRANSPORT_REQUIRED');
 
         this.transportsToRegister = transports;
+        this.transportsMap = new Map();
+
         this.maxPacketSizeInBytes = maxPacketSize;
 
         this.methods = {
@@ -22,12 +24,36 @@ class MoleServer {
         };
     }
 
+    async run() {
+        const promises = this.transportsToRegister.map(this.registerTransport.bind(this));
+
+        this.transportsToRegister = [];
+
+        await Promise.all(promises);
+    }
+
+    async shutdown() {
+        const promises = [];
+
+        for (const transport of this.transportsMap.keys()) {
+            promises.push(this.removeTransport(transport));
+        }
+
+        await Promise.all(promises);
+    }
+
     async registerTransport(transport) {
         await transport.onData(this._processRequest.bind(this, transport));
+
+        this.transportsMap.set(transport, true);
     }
 
     async removeTransport(transport) {
-        await transport.shutdown(); // TODO
+        this.transportsMap.delete(transport);
+
+        if (typeof transport.shutdown === 'function') {
+            await transport.shutdown();
+        }
     }
 
     async _processRequest(transport, data) {
@@ -156,14 +182,6 @@ class MoleServer {
 
     _handlePing() {
         return 'pong';
-    }
-
-    async run() {
-        for (const transport of this.transportsToRegister) {
-            await this.registerTransport(transport);
-        }
-
-        this.transportsToRegister = [];
     }
 }
 
