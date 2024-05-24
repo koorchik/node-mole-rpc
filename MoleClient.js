@@ -234,7 +234,8 @@ class MoleClient {
             }
         }[errorData.code];
 
-        return errorBuilder(errorData);
+        return errorBuilder ? errorBuilder(errorData) :
+            new Error(`${errorData.code} ${errorData.message}`);
     }
 
     _generateId() {
