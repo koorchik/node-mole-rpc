@@ -95,15 +95,15 @@ class MoleClient {
         const data = JSON.stringify(object);
 
         return new Promise((resolve, reject) => {
-            this.pendingRequest[id] = { resolve, reject, sentObject: object };
-
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 if (this.pendingRequest[id]) {
                     delete this.pendingRequest[id];
 
                     reject(new X.RequestTimeout());
                 }
             }, timeout);
+
+            this.pendingRequest[id] = { resolve, reject, sentObject: object, timer };
 
             return this.transport.sendData(data).catch(error => {
                 delete this.pendingRequest[id];
@@ -132,6 +132,7 @@ class MoleClient {
         delete this.pendingRequest[response.id];
 
         if (!resolvers) return;
+        clearTimeout(resolvers.timer);
 
         if (isSuccessfulResponse) {
             resolvers.resolve(response.result);
@@ -167,8 +168,9 @@ class MoleClient {
 
         if (!this.pendingRequest[batchId]) return;
 
-        const { sentObject, resolve } = this.pendingRequest[batchId];
+        const { sentObject, resolve, timer } = this.pendingRequest[batchId];
         delete this.pendingRequest[batchId];
+        clearTimeout(timer);
 
         const batchResults = [];
         let errorIdx = 0;
