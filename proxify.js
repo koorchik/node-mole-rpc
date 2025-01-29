@@ -1,5 +1,6 @@
 function proxify(moleClient) {
     const initProxy = proxifyOwnMethod(moleClient.init.bind(moleClient));
+    const shutdownProxy = proxifyOwnMethod(moleClient.shutdown.bind(moleClient));
     const callMethodProxy = proxifyOwnMethod(moleClient.callMethod.bind(moleClient));
     const notifyProxy = proxifyOwnMethod(moleClient.notify.bind(moleClient));
     const pingProxy = proxifyOwnMethod(moleClient.ping.bind(moleClient));
@@ -9,6 +10,8 @@ function proxify(moleClient) {
             switch (methodName) {
                 case 'init':
                     return initProxy;
+                case 'shutdown':
+                    return shutdownProxy;
                 case 'callMethod':
                     return callMethodProxy;
                 case 'notify':

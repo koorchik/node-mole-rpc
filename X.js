@@ -31,11 +31,13 @@ class InvalidParams extends Base {
 }
 
 class InternalError extends Base {
-    constructor() {
+    constructor({ message = 'Internal error', data = null } = {}) {
         super({
             code: errorCodes.INTERNAL_ERROR,
-            message: 'Internal error'
+            message
         });
+
+        this.data = data;
     }
 }
 
@@ -77,7 +79,7 @@ class RequestTimeout extends RequestTimout {
 }
 
 class ExecutionError extends ServerError {
-    constructor({data = null} = {}) {
+    constructor({ data = null } = {}) {
         super({
             code: errorCodes.EXECUTION_ERROR,
             message: 'Method has returned error'

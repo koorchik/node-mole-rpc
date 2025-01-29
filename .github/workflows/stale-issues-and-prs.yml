@@ -1,0 +1,9 @@
+name: 'Close stale issues and PRs'
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  stale:
+    uses: Delos-tech/github-tools/.github/workflows/mark-and-close-stale.yml@main

@@ -9,18 +9,37 @@ Tiny transport agnostic JSON-RPC 2.0 client and server which can work both in No
 
 ## Table of contents
 
+- [mole-rpc](#mole-rpc)
+  - [Table of contents](#table-of-contents)
   - [Features](#features)
   - [Motivation](#motivation)
   - [Basic usage](#basic-usage)
-    - [Simple example with websocket transport](#simple-example-with-websocket-transport)
+    - [Server side](#server-side)
+    - [Client side](#client-side)
+  - [API docs](#api-docs)
+    - [MoleClient](#moleclient)
+      - [`new MoleClient({ transport, requestTimeout, pingTimeout })`](#new-moleclient-transport-requesttimeout-pingtimeout-)
+      - [`moleClient.init()`](#moleclientinit)
+      - [`moleClient.shutdown()`](#moleclientshutdown)
+      - [`moleClient.callMethod(method, params, options = { timeout })`](#moleclientcallmethodmethod-params-options---timeout-)
+      - [`moleClient.notify(method, params)`](#moleclientnotifymethod-params)
+      - [`moleClient.ping()`](#moleclientping)
+      - [`moleClient.runBatch(calls, options = { timeout })`](#moleclientrunbatchcalls-options---timeout-)
+    - [MoleServer](#moleserver)
+      - [`new MoleServer({ transports, maxPacketSize })`](#new-moleserver-transports-maxpacketsize-)
+      - [`moleServer.expose(methods)`](#moleserverexposemethods)
+      - [`moleServer.run()`](#moleserverrun)
+      - [`moleServer.shutdown()`](#moleservershutdown)
+      - [`moleServer.registerTransport(transport)`](#moleserverregistertransporttransport)
+      - [`moleServer.removeTransport(transport)`](#moleserverremovetransporttransport)
   - [API examples](#api-examples)
-    - [Proxified client](#proxified-client)
-    - [Client (without Proxy support)](#client-without-proxy-support)
-    - [Client (ping server)](#client-ping-server)
-    - [Server (expose instance)](#server-expose-instance)
-    - [Server (expose functions)](#server-expose-functions)
+    - [MoleClient: Creating and usage](#moleclient-creating-and-usage)
+    - [MoleClient: Proxifying methods](#moleclient-proxifying-methods)
+    - [MoleClient: Pinging the server](#moleclient-pinging-the-server)
+    - [MoleServer: Exposing instance methods](#moleserver-exposing-instance-methods)
+    - [MoleServer: Exposing functions](#moleserver-exposing-functions)
     - [Error Handling](#error-handling)
-  - [Advanced usage](#advanced-usage)
+    - [Advanced usage: Batching calls](#advanced-usage-batching-calls)
   - [Use cases](#use-cases)
     - [Case 1: Easy way to communicate with web-workers in your browser](#case-1-easy-way-to-communicate-with-web-workers-in-your-browser)
     - [Case 2: Bypass firewall](#case-2-bypass-firewall)
@@ -66,11 +85,12 @@ Mole-RPC solves all of the issues described above.
 
 This module is transport agnostics. So, [you can choose any transport you need](https://www.npmjs.com/search?q=keywords:mole-transport)
 
-### Simple example with websocket transport
+**Simple example with websocket transport**
 
 In this example, we use WebSocketServer for RPC server but you you can use simple WS server transport as well. This can be useful for the case when server connects to client (you can bypass firefall in this way).
 
-**Server**
+### Server side
+
 ```js
 const MoleServer = require('mole-rpc/MoleServer');
 const TransportServerWSS = require('mole-rpc-transport-ws/TransportServerWSS');
@@ -102,7 +122,7 @@ function prepareTransports() {
 main().catch(console.error);
 ```
 
-**Client (with Proxy support)**
+### Client side
 
 ```js
 const MoleClient = require('mole-rpc/MoleClientProxified');
@@ -138,9 +158,129 @@ function prepareTransport() {
 main().then(console.log, console.error);
 ```
 
+## API docs
+
+### MoleClient
+
+#### `new MoleClient({ transport, requestTimeout, pingTimeout })`
+
+Method is used to create MoleClient instance.
+
+- `transport` - one of the supported mole transports, or the custom one (**required**)
+- `requestTimeout` - property to set the default timeout in milliseconds for outgoing calls (default **20000**)
+- `pingTimeout` - property to set the default timeout in milliseconds for ping calls (default **10000**)
+
+#### `moleClient.init()`
+
+Method is used to manually init the client's transport. \
+Called automatically on the first outgoing call. \
+Therefore usage is optional.
+
+#### `moleClient.shutdown()`
+
+Method is used to call the `shutdown` method on client's transport. \
+That usually means unsubscribing from transport's channels / closing connections.
+
+#### `moleClient.callMethod(method, params, options = { timeout })`
+
+Method is used to make request to the server and wait for the response.
+
+- `method` - the name of exposed method on the server side
+- `params` - array of parameters that will be passed to exposed method on the server side
+- `options` - request options object (*optional*)
+  - `timeout` - override the default `requestTimeout` in milliseconds
+
+Response is returned in the format specified by exposed method on the server side.
+
+#### `moleClient.notify(method, params)`
+
+Method is used to send request to the server, but do not wait for the response. \
+It emulates the **fire and forget** approach.
+
+- `method` - the same as in `callMethod`
+- `params` - the same as in `callMethod`
+
+#### `moleClient.ping()`
+
+Method is used to send the internal ping call and check if server is available.
+
+Throws the `RequestTimeout` error if server is not reachable.
+
+#### `moleClient.runBatch(calls, options = { timeout })`
+
+Method is used to send the batch of calls to the server.
+
+- `calls` - array of call objects: { method, params, mode }
+  - `method` - the same as in `callMethod`
+  - `params` - the same as in `callMethod`
+  - `mode` - controls the request execution mode. Set `notify` to avoid waiting for response
+- `options` - batch options object (*optional*)
+  - `timeout` - override the default `requestTimeout` in milliseconds
+
+Response returned as an array of results for every specified call, and `null` in case of notify mode.
+
+
+### MoleServer
+
+#### `new MoleServer({ transports, maxPacketSize })`
+
+Method is used to create MoleServer instance.
+
+- `transports` - list of the supported mole transports, or the custom one (**required**). \
+An empty list may be passed, and further tranports added by `registerTransport`.
+- `maxPacketSize` - property to set the bytes max size of response message packet (*optional*) \
+It is useful in cases when your network capacity is limited. The `INTERNAL_ERROR` will be thrown on limit exceeding.
+
+#### `moleServer.expose(methods)`
+
+Method is used to expose RPC methods for calling from client.
+
+- `methods` - an object with methods, or any class instance
+
+#### `moleServer.run()`
+
+Method is used to start the server and register all transports passed into constuctor.
+
+#### `moleServer.shutdown()`
+
+Method is used to shutdown the server and call `shutdown` method on all registered transports.
+
+#### `moleServer.registerTransport(transport)`
+
+Method is used to register one more transport for the server. \
+May be used even after the starting of server.
+
+- `transport` - the instance of mole transport to add
+
+#### `moleServer.removeTransport(transport)`
+
+Method is used to remove the registered transport from the server. \
+The `shutdown` method will be called on the transport if present.
+
+- `transport` - the instance of mole transport to remove
+
+
 ## API examples
 
-### Proxified client
+### MoleClient: Creating and usage
+
+```javascript
+import MoleClient from 'mole-rpc/MoleClient';
+
+// choose any transports here
+// https://www.npmjs.com/search?q=keywords:mole-transport
+const transport = new TransportClient();
+const client = new MoleClient({ transport });
+
+const result1 = await client.callMethod('sum', [1, 3]);
+const result2 = await client.callMethod('sum', [2, 3]);
+
+// Send JSON RPC notification (fire and forget)
+// server will send no response
+await client.notify('sum', [2, 3]);
+```
+
+### MoleClient: Proxifying methods
 
 If you use modern JavaScript you can use proxified client.
 It allows you to do remote calls very similar to local calls
@@ -161,25 +301,7 @@ const result2 = await calculator.asyncSum(2, 3);
 await calculator.notify.sum(3, 2);
 ```
 
-### Client (without Proxy support)
-
-```javascript
-import MoleClient from 'mole-rpc/MoleClient';
-
-// choose any transports here
-// https://www.npmjs.com/search?q=keywords:mole-transport
-const transport = new TransportClient();
-const client = new MoleClient({ transport });
-
-const result1 = await client.callMethod('sum', [1, 3]);
-const result2 = await client.callMethod('sum', [2, 3]);
-
-// Send JSON RPC notification (fire and forget)
-// server will send no response
-await client.notify('sum', [2, 3]);
-```
-
-### Client (ping server)
+### MoleClient: Pinging the server
 
 ```javascript
 const MoleClient = require('mole-rpc/MoleClient');
@@ -203,7 +325,7 @@ try {
 }
 ```
 
-### Server (expose instance)
+### MoleServer: Exposing instance methods
 
 You can expose instance directly.
 Methods which start with underscore will not be exposed.
@@ -240,7 +362,7 @@ server.expose(calculator);
 await server.run();
 ```
 
-### Server (expose functions)
+### MoleServer: Exposing functions
 
 You can expose functions directly
 
@@ -332,6 +454,8 @@ async function main() {
       console.log('METHOD RETURNED ERROR', error.data);
     } else if (error instanceof X.RequestTimeout) {
       console.log('METHOD EXCEEDED ALLOWED EXECUTION TIME');
+    } else if (error instanceof X.InternalError) {
+      console.log('METHOD FAILED WITH INTERNAL ERROR', error.message, error.data);
     } else {
       throw error;
     }
@@ -339,7 +463,7 @@ async function main() {
 }
 ```
 
-## Advanced usage
+### Advanced usage: Batching calls
 
 ```javascript
 
